@@ -202,11 +202,11 @@
 
         // Returns text advice based on state status
         function getTextContentForLocation(stateID) {
-            // TODO: craft your messages for different risk levels
+            // TODO: craft your messages based on the data for the given state
             // You can special-case different states by their stateID,
             // which is simply their two-letter abbreviation, like "NY"
             var state = stateIDToData[stateID];
-            return "Risk level for " + state.name + " is " + state.displayAttribute;
+            return "Display attribute for " + state.name + " is " + state.displayAttribute;
         }
     </script>
 

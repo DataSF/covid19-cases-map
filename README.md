@@ -1,8 +1,8 @@
 # Albers USA state-level data visualization
 
-This example builds on the [Albers projection style blog post](https://www.mapbox.com/elections/albers-usa-projection-style). You can [add the Albers style to your account](https://account.mapbox.com/auth/signin/?route-to=https://studio.mapbox.com/styles/add-style/lobenichou/ck6mlwzti0xkq1ipl6zxkblyz) to .
+This directory contains example code for visualizing state-level data as a choropleth map with a sidebar for displaying additional data about viewer-selected locations.
 
-This directory contains example code for visualizing state-level data.
+This example builds on the [Albers projection style blog post](https://www.mapbox.com/elections/albers-usa-projection-style). You can [add the Albers style to your account](https://account.mapbox.com/auth/signin/?route-to=https://studio.mapbox.com/styles/add-style/lobenichou/ck6mlwzti0xkq1ipl6zxkblyz) to get access to the Albers tileset and adjust the style to your needs. Alternatively, the style included in the sample code is public and already uses the Albers tileset. If you want to visualize counties, you will need to add the style to your own account.
 
 The `index.html` file shows how to style a map based on data loaded from a CSV. You can replace the usage of `mock-states.csv` in the index file to point to a CSV file with the same shape that is hosted elsewhere.
 
@@ -22,6 +22,8 @@ will load the "some value" column of a CSV to an array of objects with that valu
 To make development easier and test that the code is reliable, we have a few extra files in this directory. We use the javascript development tool [yarn](https://classic.yarnpkg.com/en/docs/install/) to interact with them.
 
 ## Running locally
+
+Because we load data from a server, we need a server to host the `mock-states.csv` file in order to see the map properly.
 
 Install the node dependencies for testing and serving our files:
 
