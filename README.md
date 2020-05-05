@@ -14,7 +14,7 @@ will load the "some value" column of a CSV to an array of objects with that valu
 
 ## Production files
 - index.html: the main display file and user interaction code
-- mock-states.csv: epidemiology data (can be replaced by pointing the stateLevelDataURL to a new location)
+- mock-states.csv: data for display (can be replaced by pointing the stateLevelDataURL to a new location)
 
 `// TODO` comments in the code indicate places where you should update information to match your production system.
 

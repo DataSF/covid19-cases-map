@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Display a map</title>
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Choropleth with sidebar</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
     <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
     <style>
@@ -20,8 +20,10 @@
             flex: 0 1 auto;
         }
 
-        #textOutput {
+        #sidebar {
             flex-grow: 1;
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0 0.5em;
         }
 
         #visual {
@@ -35,7 +37,10 @@
 <body>
     <section id="visual">
         <div id="map"></div>
-        <section id="textOutput"></section>
+        <section id="sidebar">
+            <h2>Data about this map</h2>
+            <p id="dynamic_content">This data will be replaced by information from the map when you interact.</p>
+        </section>
     </section>
     <!-- script for loading data from CSV -->
     <!-- we use XMLHttpRequest to maintain maximum backward compatibility -->
@@ -124,7 +129,7 @@
             // TODO: point to your production data
             var stateLevelDataURL = "./mock-states.csv";
             loadCSV(stateLevelDataURL,
-                { name: "name", abbreviation: "id", riskLevel: "number_of_interest", population: "population" },
+                { name: "name", abbreviation: "id", displayAttribute: "number_of_interest", population: "population" },
                 assignFeatureStateFromData);
         });
 
@@ -157,9 +162,16 @@
         function assignFeatureStateFromData(data) {
             for (var i = 0; i < data.length; i += 1) {
                 var state = data[i];
-                // assign `level` feature state
-                var normalizedLevel = parseFloat(state.riskLevel) / 1000000;
-                map.setFeatureState({ source: "composite", sourceLayer: "albersusa", id: state.abbreviation }, { level: normalizedLevel });
+                // TODO: choose the right data breakpoints for what you are showing
+                // assign `level` feature state by scaling down the input value
+                // here, we saturate the color when the display attribute is >= 10% of the population
+                var proportion = parseFloat(state.displayAttribute) / parseFloat(state.population);
+                var scaledLevel = Math.min(proportion / 0.10, 1.0);
+                // Specify the source tileset from studio and the source layer that contains the features used for display
+                map.setFeatureState(
+                    { source: "composite", sourceLayer: "albersusa", id: state.abbreviation },
+                    { level: scaledLevel });
+                // add data to a lookup by id so we can easily reference it later when a feature is clicked
                 stateIDToData[state.abbreviation] = state;
             }
             addStateInteraction();
@@ -184,7 +196,7 @@
         }
 
         function showSidebarForLocation(stateID) {
-            var output = document.getElementById("textOutput");
+            var output = document.getElementById("dynamic_content");
             output.textContent = getTextContentForLocation(stateID);
         }
 
@@ -194,7 +206,7 @@
             // You can special-case different states by their stateID,
             // which is simply their two-letter abbreviation, like "NY"
             var state = stateIDToData[stateID];
-            return "Risk level for " + state.name + " is " + state.riskLevel;
+            return "Risk level for " + state.name + " is " + state.displayAttribute;
         }
     </script>
 
