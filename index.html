@@ -2,213 +2,298 @@
 <html>
 
 <head>
-    <meta charset="utf-8" />
-    <title>Choropleth with sidebar</title>
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
-    <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
-    <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-
-        #map {
-            width: 640px;
-            height: 480px;
-            display: block;
-            flex: 0 1 auto;
-        }
-
-        #sidebar {
-            flex-grow: 1;
-            font-family: Arial, Helvetica, sans-serif;
-            margin: 0 0.5em;
-        }
-
-        #visual {
-            width: 100vw;
-            display: flex;
-            flex-direction: row;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>Map of Confirmed Cases and Deaths | San Francisco</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" media="all" href="//fonts.googleapis.com/css?family=Rubik:300,400,500,700">
+  <link rel="stylesheet" media="all" href="index.css">
 </head>
 
 <body>
-    <section id="visual">
-        <div id="map"></div>
-        <section id="sidebar">
-            <h2>Data about this map</h2>
-            <p id="dynamic_content">This data will be replaced by information from the map when you interact.</p>
-        </section>
+  <section id="visual">
+    <div id="map"></div>
+    <div class="map-overlay" id="legend">
+      <h2>Cases per 10,000 residents</h2>
+    </div>
+    <section id="sidebar">
+      <div class="sidebar__heading">
+        <h1 id="dynamic_title">Map of Confirmed Cases and Deaths</h1>
+        Click on the map to highlight an area for more information.
+      </div>
+      <div class="sidebar__content">
+        <div id="dynamic_content">
+          <p>The map shows the distribution of COVID-19 incidence rates. This is calculated by dividing the count of COVID-19 positives by the estimated population for each area and multiplying by 10,000 to get a
+            meaningful rate. For example, 20 per 10,0000 residents. You can zoom to see these rates by smaller areas.
+          </p>
+          <p> Note that because of variability in the data, rates for small counts of less than 20 are not calculated. There is a risk that rates calculated on counts lower than 20 can lead to innacurate conclusions about the virus in San Francisco. This is a standard practice to account for something called the Relative Standard Error.</p>
+          <p>You can click on an area in the map to see the counts of positive cases in those areas where rates are not shown.</p>
+        </div>
+      </div>
     </section>
-    <!-- script for loading data from CSV -->
-    <!-- we use XMLHttpRequest to maintain maximum backward compatibility -->
-    <script>
-        /// Read CSV data published by domestic team from `source`
-        /// Parses CSV for the requested `fields`. `fields` is an object where the key is
-        /// the output key and the value is the expected column name in the data.
-        /// Calls `callback` with parsed data when successfully complete.
-        /// If there is an error, calls `errorHandler` instead.
-        function loadCSV(source, fields, callback, errorHandler) {
-            var request = new XMLHttpRequest();
-            request.open("GET", source);
-            request.onreadystatechange = function (event) {
-                if (request.readyState === XMLHttpRequest.DONE) {
-                    try {
-                        var text = request.responseText;
-                        var entries = parseCSVForFields(text, fields);
-                        if (callback) {
-                            callback(entries);
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        if (errorHandler) {
-                            errorHandler(err);
-                        }
-                    }
-                }
-            };
-
-            request.send();
-        }
-
-        /// Parse CSV data and return array of objects with requested fields
-        function parseCSVForFields(text, fields) {
-            var lines = text.split("\n");
-            var sep = ",";
-
-            var keyIndices = parseHeader(lines[0], fields);
-
-            if (keyIndices.some(function (v) { return v.index === -1; })) {
-                throw (new Error("Heading format for data has changed. Please update this page to expect new data format."))
+  </section>
+  <!-- script for loading data from CSV -->
+  <!-- we use XMLHttpRequest to maintain maximum backward compatibility -->
+  <script>
+    /// Read CSV data published by domestic team from `source`
+    /// Parses CSV for the requested `fields`. `fields` is an object where the key is
+    /// the output key and the value is the expected column name in the data.
+    /// Calls `callback` with parsed data when successfully complete.
+    /// If there is an error, calls `errorHandler` instead.
+    function loadCSV(source, fields, callback, errorHandler) {
+      var request = new XMLHttpRequest();
+      request.open("GET", source);
+      request.onreadystatechange = function (event) {
+        if (request.readyState === XMLHttpRequest.DONE) {
+          try {
+            var text = request.responseText;
+            var entries = parseCSVForFields(text, fields);
+            if (callback) {
+              callback(entries);
             }
-
-            var entries = [];
-            for (var i = 1; i < lines.length; i += 1) {
-                if (lines[i].length === 0) {
-                    continue;
-                }
-                var pieces = lines[i].split(sep);
-                var obj = keyIndices.reduce(function (collection, keyIndex) {
-                    collection[keyIndex.key] = pieces[keyIndex.index].trim();
-                    return collection;
-                }, {});
-                entries.push(obj);
+          } catch (err) {
+            console.error(err);
+            if (errorHandler) {
+              errorHandler(err);
             }
-            return entries;
+          }
         }
+      };
 
-        function parseHeader(row, fields) {
-            var sep = ",";
-            var headings = row.split(sep).map(function (heading) { return heading.trim(); });
-            return Object.keys(fields).map(function (key) {
-                return { key: key, index: headings.indexOf(fields[key]) };
-            });
+      request.send();
+    }
+
+    /// Parse CSV data and return array of objects with requested fields
+    function parseCSVForFields(text, fields) {
+      var lines = text.split("\n");
+      var sep = ",";
+
+      var keyIndices = parseHeader(lines[0], fields);
+      if (keyIndices.some(function (v) { return v.index === -1; })) {
+        throw (new Error("Heading format for data has changed. Please update this page to expect new data format."))
+      }
+
+      var entries = [];
+      for (var i = 1; i < lines.length; i += 1) {
+        if (lines[i].length === 0) {
+          continue;
         }
-    </script>
-    <!-- Script for displaying a map and updating the sidebar with data from map -->
-    <script>
-        // TODO: add your access token
-        mapboxgl.accessToken = 'pk.eyJ1IjoiZGF2aWQtd2lja3MiLCJhIjoiY2s5dHlwNzE5MWF4bjNtbXJhbGV1bjQ2NiJ9.fvifwhaQ_Y-x9AknEkTsYQ';
-        var map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/david-wicks/ck9uah3qf0sxh1io4pf13fa46',
-            zoom: 3.25,
-            center: [0, 0],
-            maxZoom: 10,
-            maxBounds: [
-                [-40, -35],
-                [40, 35]
-            ]
-        });
+        var pieces = lines[i].split(sep);
+        var obj = keyIndices.reduce(function (collection, keyIndex) {
+          collection[keyIndex.key] = pieces[keyIndex.index].trim();
+          return collection;
+        }, {});
+        entries.push(obj);
+      }
+      return entries;
+    }
 
-        map.on("style.load", function () {
-            addDynamicStateLayerStyles();
-            // load data from a url, then pass it to assignFeatureStateFromData
-            // TODO: point to your production data
-            var stateLevelDataURL = "./mock-states.csv";
-            loadCSV(stateLevelDataURL,
-                { name: "name", abbreviation: "id", displayAttribute: "number_of_interest", population: "population" },
-                assignFeatureStateFromData);
-        });
+    function parseHeader(row, fields) {
+      var sep = ",";
+      var headings = row.split(sep).map(function (heading) { return heading.trim(); });
+      return Object.keys(fields).map(function (key) {
+        return { key: key, index: headings.indexOf(fields[key]) };
+      });
+    }
+  </script>
+  <!-- Script for displaying a map and updating the sidebar with data from map -->
+  <script>
+    var geomLayer = 'neighborhoods-data';
+    var outlineLayer = 'neighborhoods-outline';
+    var referenceLayer = 'neighborhoods-reference';
+    var geomSource = 'covid19_cases-1eby22';
+    var zoomThreshold = 13;
 
-        function addDynamicStateLayerStyles() {
-            // promote id from albers so we can join our data
-            var style = map.getStyle();
-            // TODO: if you are using counties, you will also need to promote a
-            // county-level id for joining on feature-state
-            style.sources.composite.promoteId = "state_abbrev";
-            map.setStyle(style);
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
+    var map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/datasf/cka1lnz4u09o81innjp1ywa92?fresh=true',
+      zoom: 11.5,
+      center: [-122.402964, 37.767043],
+      maxBounds: [[-122.626179, 37.640314], [-122.28178, 37.929844]]
+    });
 
-            map.setPaintProperty("state-boundaries", "line-color",
-                ["case", ["==", ["feature-state", "selected"], true], "#FEB42E", "#fff"]);
-            map.setPaintProperty("state-boundaries", "line-width",
-                ["case", ["==", ["feature-state", "selected"], true], 3, 1])
-            map.setPaintProperty("state-boundaries", "line-offset",
-                ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
-            // color gradation based on 'level' value
-            var expression = ["interpolate",
-                ["linear"],
-                ["feature-state", "level"],
-                0, "#72E6E2",
-                1, "#30678D",
-            ];
-            map.setPaintProperty("states", "fill-color", expression);
+    map.on("style.load", function () {
+      addDynamicLayerStyles();
+      // load data from a url, then pass it to assignFeatureStateFromData
+      // TODO: point to your production data
+      var fillRamp = map.getPaintProperty(geomLayer,'fill-color')[2];
+      fillRamp = fillRamp.splice(2);
+      var layers = fillRamp.filter((layer, idx) => idx %2 == 1);
+      var colors = fillRamp.filter((layer, idx) => idx %2 == 0)
+      for (i = 0; i < layers.length; i++) {
+        var layer = layers[i] + " to " + layers[i+1];
+        if (layers[i+1] === undefined) {
+          layer = "Greater than " + layers[i];
         }
+        var color = colors[i];
+        var item = document.createElement('div');
+        var key = document.createElement('span');
+        key.className = 'legend-key';
+        key.style.backgroundColor = color;
+        var value = document.createElement('span');
+        value.innerHTML = layer;
 
-        /// update map state from latest data
-        var stateIDToData = {};
-        function assignFeatureStateFromData(data) {
-            for (var i = 0; i < data.length; i += 1) {
-                var state = data[i];
-                // TODO: choose the right data breakpoints for what you are showing
-                // assign `level` feature state by scaling down the input value
-                // here, we saturate the color when the display attribute is >= 10% of the population
-                var proportion = parseFloat(state.displayAttribute) / parseFloat(state.population);
-                var scaledLevel = Math.min(proportion / 0.10, 1.0);
-                // Specify the source tileset from studio and the source layer that contains the features used for display
-                map.setFeatureState(
-                    { source: "composite", sourceLayer: "albersusa", id: state.abbreviation },
-                    { level: scaledLevel });
-                // add data to a lookup by id so we can easily reference it later when a feature is clicked
-                stateIDToData[state.abbreviation] = state;
-            }
-            addStateInteraction();
-        }
+        item.appendChild(key);
+        item.appendChild(value);
+        legend.appendChild(item);
+      }
 
-        function addStateInteraction() {
-            // Handle clicks on states to load information
-            map.on("click", "states", function (event) {
-                var state = event.features[0];
-                setSelectedState(state);
-            });
-        }
+      var item = document.createElement('div');
+      var key = document.createElement('span');
+      key.className = 'legend-key';
+      key.style.backgroundColor = '#f2f2f2';
+      var value = document.createElement('span');
+      value.innerHTML = 'Counts too small (<10)';
 
-        var selectedState = null;
-        function setSelectedState(feature) {
-            if (selectedState) {
-                map.removeFeatureState({ source: "composite", sourceLayer: "albersusa", id: selectedState.id }, "selected");
-            }
-            map.setFeatureState({ source: "composite", sourceLayer: "albersusa", id: feature.id }, { "selected": true });
-            selectedState = feature;
-            showSidebarForLocation(selectedState.id);
-        }
+      item.appendChild(key);
+      item.appendChild(value);
+      legend.appendChild(item);
 
-        function showSidebarForLocation(stateID) {
-            var output = document.getElementById("dynamic_content");
-            output.textContent = getTextContentForLocation(stateID);
-        }
+      var dataUrl = "./covid19_cases.geojson";
 
-        // Returns text advice based on state status
-        function getTextContentForLocation(stateID) {
-            // TODO: craft your messages based on the data for the given state
-            // You can special-case different states by their stateID,
-            // which is simply their two-letter abbreviation, like "NY"
-            var state = stateIDToData[stateID];
-            return "Display attribute for " + state.name + " is " + state.displayAttribute;
-        }
-    </script>
+      fetch(dataUrl)
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(assignFeatureStateFromData);
+      
+      /*loadCSV(dataUrl,
+        { id: "geoid10", rate: "cntpop", population: "Pop", count: "FREQUENCY" },
+        assignFeatureStateFromData);*/
+
+      /* Remove rotate from control
+      *  Disable drag rotate
+      *  Disable touch zoom rotate
+      */ 
+      map.addControl(new mapboxgl.NavigationControl({
+        showCompass: false
+      }));
+      map.dragRotate.disable();
+      map.touchZoomRotate.disableRotation();
+    });
+
+    map.on('zoom', function() {
+      if (map.getZoom() > zoomThreshold) {
+        geomLayer = 'census-tracts-data';
+        outlineLayer = 'census-tracts-outline';
+        addDynamicLayerStyles();
+        addInteraction();
+      } else {
+        geomLayer = 'neighborhoods-data';
+        outlineLayer = 'neighborhoods-outline';
+        addDynamicLayerStyles();
+        addInteraction();
+      }
+    })
+
+    function addDynamicLayerStyles() {
+      // promote id from albers so we can join our data
+      var style = map.getStyle();
+      // TODO: if you are using counties, you will also need to promote a
+      // county-level id for joining on feature-state
+      // TODO: change this identifier to match final
+      style.sources.composite.promoteId = "id";
+      map.setStyle(style);
+      map.setPaintProperty(outlineLayer, "line-color",
+        ["case", ["==", ["feature-state", "selected"], true], "#FEB42E", "#FFFFFF"]);
+      map.setPaintProperty(outlineLayer, "line-width",
+        ["case", ["==", ["feature-state", "selected"], true], 3, 1]);
+      map.setPaintProperty(outlineLayer, "line-offset",
+        ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
+      // color gradation based on 'level' value
+      /*
+      var expression = ["interpolate",
+        ["linear"],
+        ["feature-state", "level"],
+        0, "#72E6E2",
+        1, "#30678D",
+      ];
+      map.setPaintProperty("census-tracts", "fill-color", expression);*/
+    }
+
+    /// update map state from latest data
+    var geomIDToData = {};
+    function assignFeatureStateFromData(data) {
+      var features = data.features;
+      console.log(data);
+      for (var i = 0; i < features.length; i += 1) {
+        var geom = features[i];
+        console.log(geom)
+        geomIDToData[geom.properties.id] = geom.properties;
+      }
+      console.log(geomIDToData);
+      addInteraction();
+    }
+
+    function addInteraction() {
+      // Handle clicks on states to load information
+      map.on('click', geomLayer, function (event) {
+        var geometry = event.features[0];
+        setSelectedGeometry(geometry);
+      });
+    }
+
+    var selectedGeom = null;
+    function setSelectedGeometry(feature) {
+      if (selectedGeom) {
+        map.removeFeatureState({ source: "composite", sourceLayer: geomSource, id: selectedGeom.id }, "selected");
+      }
+      if (selectedGeom === null || selectedGeom.id !== feature.id) {
+        map.setFeatureState({ source: "composite", sourceLayer: geomSource, id: feature.id }, { "selected": true });
+        selectedGeom = feature;
+        showSidebarForLocation(feature.id);
+      } else {
+        selectedGeom = null;
+      }
+    }
+
+    function showSidebarForLocation(geomId) {
+      var output = document.getElementById("dynamic_content");
+      var title = document.getElementById("dynamic_title");
+      title.textContent = `${geomId}`;
+      getContentForLocation(geomId, output);
+    }
+
+    function formatNumber(num) {
+      return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+    }
+
+    // Returns text advice based on state status
+    function getContentForLocation(geomId, output) {
+      // TODO: craft your messages based on the data for the given state
+      // You can special-case different states by their stateID,
+      // which is simply their two-letter abbreviation, like "NY"
+      var geom = geomIDToData[geomId];
+      console.log(geom.rate);
+      var lines = "";
+      lines += `<p>This area has an estimated rate of <strong>${geom.rate.toFixed(1)} positive cases</strong> per 10,000 residents.</p>`;
+      lines += `<p>There are <strong>${geom.count} positive cases</strong> among a resident <strong>population of about ${formatNumber(geom.acs_population)}</strong>.`
+      lines += `<p>Out of the <strong>${geom.count} positive cases</strong>, [DEATHS] individuals have died.`
+      if (geom.deaths !== undefined || geom.deaths > 0) {
+        lines += `Out of the <strong>${geom.count} confirmed cases</strong>, [DEATHS] individuals have died.`
+      }
+      /*
+      lines.push(`There are [COUNT] confirmed cases among a resident population of about [POP].`);
+      lines.push(`Out of the [COUNT] confirmed cases, [DEATHS] individuals have died.`);
+      lines.push(`[CENSUS TRACT-SPECIFIC INFORMATION HERE, for example: This census tract contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: link.]`);
+      lines.push(`This data does not mean that any area of the city is more or less safe than any other area. All San Franciscans are strongly advised to continue taking all precautions to protect themselves and others (including staying home as much as possible, wearing a face covering, and staying at least 6 feet away from others).`);
+      lines.push(`San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit www.SF.gov/coronavirus or call 311.`);
+      lines.push(`The dashboard below shows the data from the map in a table format. Just like in the map, all census tracts with resident populations of less than [CONFIRM NUMBER], and any census tract with fewer than [CONFIRM NUMBER] confirmed cases are omitted in order to protect privacy. As more cases are confirmed, the dashboard will be updated.`)
+      lines.push(`The figures are updated daily and data are added as more information becomes available.`)
+      output.innerHTML = "";
+      let paras = lines.map(line => {
+        let para = document.createElement('P');
+        para.innerHTML = line;
+        return para;
+      }).reduce((acc, curr) => output.appendChild(curr));*/assignFeatureStateFromData
+      output.innerHTML = lines;
+    }
+  </script>
 
 </body>
 
