@@ -24,11 +24,13 @@
       </div>
       <div class="sidebar__content">
         <div id="dynamic_content">
-          <p>The map shows the distribution of COVID-19 incidence rates. This is calculated by dividing the count of COVID-19 positives by the estimated population for each area and multiplying by 10,000 to get a
-            meaningful rate. For example, 20 per 10,0000 residents. You can zoom to see these rates by smaller areas.
+          <p>The map shows the distribution of COVID-19 incidence rates. We calculate the rate as a number of positive cases per 10,000 residents. You can zoom to see these rates distributed among smaller areas.
           </p>
-          <p> Note that because of variability in the data, rates for small counts of less than 20 are not calculated. There is a risk that rates calculated on counts lower than 20 can lead to innacurate conclusions about the virus in San Francisco. This is a standard practice to account for something called the Relative Standard Error.</p>
-          <p>You can click on an area in the map to see the counts of positive cases in those areas where rates are not shown.</p>
+          <h2>Rates not calculated or shown where case counts fewer than 20</h2>
+          <p> Because of variability in the data, we do not show or calculate rates for small counts of fewer than 20. There is a risk that rates calculated on counts lower than 20 can lead to inaccurate conclusions about the virus in San Francisco. This is a standard practice to account for something called the Relative Standard Error.</p>
+          <p>You can click on an area on the map to see the counts of positive cases in those areas with no calculated rate.</p>
+          <h2>Certain information dropped to protect privacy</h2>
+          <p>On the map, case counts less than 10 are indicated as such. Actual counts shown are 10 or greater. For areas with an underlying population of 1,000, data is dropped altogether.</p>
         </div>
       </div>
     </section>
@@ -253,10 +255,7 @@
     }
 
     function showSidebarForLocation(geomId) {
-      var output = document.getElementById("dynamic_content");
-      var title = document.getElementById("dynamic_title");
-      title.textContent = `${geomId}`;
-      getContentForLocation(geomId, output);
+      getContentForLocation(geomId);
     }
 
     function formatNumber(num) {
@@ -264,23 +263,44 @@
     }
 
     // Returns text advice based on state status
-    function getContentForLocation(geomId, output) {
-      // TODO: craft your messages based on the data for the given state
-      // You can special-case different states by their stateID,
-      // which is simply their two-letter abbreviation, like "NY"
+    function getContentForLocation(geomId) {
       var geom = geomIDToData[geomId];
-      console.log(geom.rate);
-      var lines = "";
-      lines += `<p>This area has an estimated rate of <strong>${geom.rate.toFixed(1)} positive cases</strong> per 10,000 residents.</p>`;
-      lines += `<p>There are <strong>${geom.count} positive cases</strong> among a resident <strong>population of about ${formatNumber(geom.acs_population)}</strong>.`
-      lines += `<p>Out of the <strong>${geom.count} positive cases</strong>, [DEATHS] individuals have died.`
-      if (geom.deaths !== undefined || geom.deaths > 0) {
-        lines += `Out of the <strong>${geom.count} confirmed cases</strong>, [DEATHS] individuals have died.`
+      var title = document.getElementById("dynamic_title");
+      var output = document.getElementById("dynamic_content");
+      var geomName = geomId;
+      if (geom.area_type === 'Census Tract') {
+        geomName = 'Census Tract ' + geomId.substring(5,11)
       }
+      title.textContent = `${geomName}`;
+      var lines = "";
+      
+      // this will be in the dataset, so no counts below 10 should be in the underlying data
+      var count = geom.count;
+      if (geom.count < 10) {
+        count = "fewer than 10"
+      }
+      if (geom.acs_population < 1000) {
+        lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
+      } else {
+        if (geom.count < 20) {
+        lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
+        } else {
+          lines += `<p>This area has an estimated rate of <strong>${geom.rate.toFixed(1)} positive cases</strong> per 10,000 residents.</p>`;
+        }
+        lines += `<p>There are <strong>${count} positive cases</strong> among a resident <strong>population of about ${formatNumber(geom.acs_population)}</strong>.`;
+        // enter logic to cast undefined to 0 deaths
+        lines += `<p>Out of the <strong>${count} positive cases</strong>, <strong>[DEATHS] individuals have died</strong>.`;
+      }
+      lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;
+      lines += `<h2>San Francisco offering assistance to residents</h2>`;
+      lines += `<p>San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit www.SF.gov/coronavirus or call 311.</p>`;
+      lines += `<h3>Getting tested</h3>`;
+      lines += `<p>There are options for getting tested for COVID-19 in San Francisco for the uninsured and insured. <a href="">Learn more about how you can access testing</a>.</p>`;
+
       /*
       lines.push(`There are [COUNT] confirmed cases among a resident population of about [POP].`);
       lines.push(`Out of the [COUNT] confirmed cases, [DEATHS] individuals have died.`);
-      lines.push(`[CENSUS TRACT-SPECIFIC INFORMATION HERE, for example: This census tract contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: link.]`);
+      lines.push();
       lines.push(`This data does not mean that any area of the city is more or less safe than any other area. All San Franciscans are strongly advised to continue taking all precautions to protect themselves and others (including staying home as much as possible, wearing a face covering, and staying at least 6 feet away from others).`);
       lines.push(`San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit www.SF.gov/coronavirus or call 311.`);
       lines.push(`The dashboard below shows the data from the map in a table format. Just like in the map, all census tracts with resident populations of less than [CONFIRM NUMBER], and any census tract with fewer than [CONFIRM NUMBER] confirmed cases are omitted in order to protect privacy. As more cases are confirmed, the dashboard will be updated.`)
