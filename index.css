@@ -119,8 +119,8 @@ a:hover {
 .legend-key {
   display: inline-block;
   border-radius: 20%;
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
   margin-right: 5px;
   font-size: 15px;
 }

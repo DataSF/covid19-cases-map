@@ -106,6 +106,8 @@
     var referenceLayer = 'neighborhoods-reference';
     var geomSource = 'covid19_cases-1eby22';
     var zoomThreshold = 13;
+    var initialTitle = document.getElementById('dynamic_title').innerHTML;
+    var initialText = document.getElementById('dynamic_content').innerHTML;
 
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
     var map = new mapboxgl.Map({
@@ -147,7 +149,7 @@
       key.className = 'legend-key';
       key.style.backgroundColor = '#f2f2f2';
       var value = document.createElement('span');
-      value.innerHTML = 'Counts too small (<10)';
+      value.innerHTML = 'Counts too small (<20)';
 
       item.appendChild(key);
       item.appendChild(value);
@@ -248,14 +250,12 @@
       if (selectedGeom === null || selectedGeom.id !== feature.id) {
         map.setFeatureState({ source: "composite", sourceLayer: geomSource, id: feature.id }, { "selected": true });
         selectedGeom = feature;
-        showSidebarForLocation(feature.id);
+        getContentForLocation(feature.id);
       } else {
+        document.getElementById('dynamic_title').innerHTML = initialTitle
+        document.getElementById('dynamic_content').innerHTML = initialText;
         selectedGeom = null;
       }
-    }
-
-    function showSidebarForLocation(geomId) {
-      getContentForLocation(geomId);
     }
 
     function formatNumber(num) {
