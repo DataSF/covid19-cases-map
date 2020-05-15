@@ -24,13 +24,19 @@
       </div>
       <div class="sidebar__content">
         <div id="dynamic_content">
-          <p>The map shows the distribution of COVID-19 incidence rates. We calculate the rate as a number of positive cases per 10,000 residents. You can zoom to see these rates distributed among smaller areas.
+          <p>The map shows the distribution of COVID-19 incidence rates. We calculate the rate as a number of positive
+            cases per 10,000 residents. You can zoom to see these rates distributed among smaller areas.
           </p>
           <h2>Rates not calculated or shown where case counts fewer than 20</h2>
-          <p> Because of variability in the data, we do not show or calculate rates for small counts of fewer than 20. There is a risk that rates calculated on counts lower than 20 can lead to inaccurate conclusions about the virus in San Francisco. This is a standard practice to account for something called the Relative Standard Error.</p>
-          <p>You can click on an area on the map to see the counts of positive cases in those areas with no calculated rate.</p>
+          <p> Because of variability in the data, we do not show or calculate rates for small counts of fewer than 20.
+            There is a risk that rates calculated on counts lower than 20 can lead to inaccurate conclusions about the
+            virus in San Francisco. This is a standard practice to account for something called the Relative Standard
+            Error.</p>
+          <p>You can click on an area on the map to see the counts of positive cases in those areas with no calculated
+            rate.</p>
           <h2>Certain information dropped to protect privacy</h2>
-          <p>On the map, case counts less than 10 are indicated as such. Actual counts shown are 10 or greater. For areas with an underlying population of 1,000, data is dropped altogether.</p>
+          <p>On the map, case counts less than 10 are indicated as such. Actual counts shown are 10 or greater. For
+            areas with an underlying population of 1,000, data is dropped altogether.</p>
         </div>
       </div>
     </section>
@@ -102,7 +108,7 @@
   <!-- Script for displaying a map and updating the sidebar with data from map -->
   <script>
     var geomLayer = 'neighborhoods-data';
-    var outlineLayer = 'neighborhoods-outline';
+    var outlineLayers = ['neighborhoods-outline','census-tracts-outline'];
     var referenceLayer = 'neighborhoods-reference';
     var geomSource = 'covid19_cases-1eby22';
     var zoomThreshold = 13;
@@ -113,7 +119,7 @@
     var map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/datasf/cka1lnz4u09o81innjp1ywa92?fresh=true',
-      zoom: 11.5,
+      zoom: 13,
       center: [-122.402964, 37.767043],
       maxBounds: [[-122.626179, 37.640314], [-122.28178, 37.929844]]
     });
@@ -122,13 +128,13 @@
       addDynamicLayerStyles();
       // load data from a url, then pass it to assignFeatureStateFromData
       // TODO: point to your production data
-      var fillRamp = map.getPaintProperty(geomLayer,'fill-color')[2];
+      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[2];
       fillRamp = fillRamp.splice(2);
-      var layers = fillRamp.filter((layer, idx) => idx %2 == 1);
-      var colors = fillRamp.filter((layer, idx) => idx %2 == 0)
+      var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
+      var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
       for (i = 0; i < layers.length; i++) {
-        var layer = layers[i] + " to " + layers[i+1];
-        if (layers[i+1] === undefined) {
+        var layer = layers[i] + " to " + layers[i + 1];
+        if (layers[i + 1] === undefined) {
           layer = "Greater than " + layers[i];
         }
         var color = colors[i];
@@ -158,14 +164,14 @@
       var dataUrl = "./covid19_cases.geojson";
 
       fetch(dataUrl)
-    .then(function(response) {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(assignFeatureStateFromData);
-      
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(assignFeatureStateFromData);
+
       /*loadCSV(dataUrl,
         { id: "geoid10", rate: "cntpop", population: "Pop", count: "FREQUENCY" },
         assignFeatureStateFromData);*/
@@ -173,7 +179,7 @@
       /* Remove rotate from control
       *  Disable drag rotate
       *  Disable touch zoom rotate
-      */ 
+      */
       map.addControl(new mapboxgl.NavigationControl({
         showCompass: false
       }));
@@ -181,16 +187,14 @@
       map.touchZoomRotate.disableRotation();
     });
 
-    map.on('zoom', function() {
-      if (map.getZoom() > zoomThreshold) {
+    map.on('zoom', function () {
+      if (map.getZoom() >= zoomThreshold && geomLayer == 'neighborhoods-data') {
+        removeInteraction();
         geomLayer = 'census-tracts-data';
-        outlineLayer = 'census-tracts-outline';
-        addDynamicLayerStyles();
         addInteraction();
-      } else {
+      } else if (map.getZoom() < zoomThreshold && geomLayer == 'census-tracts-data') {
+        removeInteraction();
         geomLayer = 'neighborhoods-data';
-        outlineLayer = 'neighborhoods-outline';
-        addDynamicLayerStyles();
         addInteraction();
       }
     })
@@ -203,12 +207,15 @@
       // TODO: change this identifier to match final
       style.sources.composite.promoteId = "id";
       map.setStyle(style);
-      map.setPaintProperty(outlineLayer, "line-color",
+      for (let step = 0; step < outlineLayers.length; step++) {
+        map.setPaintProperty(outlineLayers[step], "line-color",
         ["case", ["==", ["feature-state", "selected"], true], "#FEB42E", "#FFFFFF"]);
-      map.setPaintProperty(outlineLayer, "line-width",
-        ["case", ["==", ["feature-state", "selected"], true], 3, 1]);
-      map.setPaintProperty(outlineLayer, "line-offset",
-        ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
+        map.setPaintProperty(outlineLayers[step], "line-width",
+          ["case", ["==", ["feature-state", "selected"], true], 3, 1]);
+        map.setPaintProperty(outlineLayers[step], "line-offset",
+          ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
+      }
+      
       // color gradation based on 'level' value
       /*
       var expression = ["interpolate",
@@ -224,22 +231,25 @@
     var geomIDToData = {};
     function assignFeatureStateFromData(data) {
       var features = data.features;
-      console.log(data);
       for (var i = 0; i < features.length; i += 1) {
         var geom = features[i];
-        console.log(geom)
         geomIDToData[geom.properties.id] = geom.properties;
       }
-      console.log(geomIDToData);
       addInteraction();
     }
 
     function addInteraction() {
-      // Handle clicks on states to load information
-      map.on('click', geomLayer, function (event) {
-        var geometry = event.features[0];
-        setSelectedGeometry(geometry);
-      });
+      map.on('click', geomLayer, onClickCallback);
+    }
+
+    function removeInteraction() {
+      map.off('click', geomLayer, onClickCallback);
+    }
+
+    function onClickCallback(event) {
+      console.log('click')
+      var geometry = event.features[0];
+      setSelectedGeometry(geometry);
     }
 
     var selectedGeom = null;
@@ -269,11 +279,11 @@
       var output = document.getElementById("dynamic_content");
       var geomName = geomId;
       if (geom.area_type === 'Census Tract') {
-        geomName = 'Census Tract ' + geomId.substring(5,11)
+        geomName = 'Census Tract ' + geomId.substring(5, 11)
       }
       title.textContent = `${geomName}`;
       var lines = "";
-      
+
       // this will be in the dataset, so no counts below 10 should be in the underlying data
       var count = geom.count;
       if (geom.count < 10) {
@@ -283,7 +293,7 @@
         lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
       } else {
         if (geom.count < 20) {
-        lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
+          lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
         } else {
           lines += `<p>This area has an estimated rate of <strong>${geom.rate.toFixed(1)} positive cases</strong> per 10,000 residents.</p>`;
         }
