@@ -14,6 +14,9 @@
 <body>
   <section id="visual">
     <div id="map"></div>
+    <div class="sfgov-cta-button__container">
+      <button id="fit" style="display: none;">Zoom to San Francisco</button>
+    </div>
     <div class="map-overlay" id="legend">
       <h2>Cases per 10,000 residents</h2>
     </div>
@@ -108,7 +111,7 @@
   <!-- Script for displaying a map and updating the sidebar with data from map -->
   <script>
     var geomLayer = 'neighborhoods-data';
-    var outlineLayers = ['neighborhoods-outline','census-tracts-outline'];
+    var outlineLayers = ['neighborhoods-outline', 'census-tracts-outline'];
     var referenceLayer = 'neighborhoods-reference';
     var geomSource = 'covid19_cases-1eby22';
     var zoomThreshold = 13;
@@ -121,7 +124,7 @@
       style: 'mapbox://styles/datasf/cka1lnz4u09o81innjp1ywa92?fresh=true',
       zoom: 11.5,
       center: [-122.402964, 37.767043],
-      maxBounds: [[-122.626179, 37.640314], [-122.28178, 37.929844]]
+      maxBounds: [[-122.53777492130767,37.6794833964247], [-122.28178000000041,37.847049047064274]]
     });
 
     map.on("style.load", function () {
@@ -188,6 +191,12 @@
     });
 
     map.on('zoom', function () {
+      console.log(map.getZoom())
+      if (map.getZoom() > 12) {
+        document.getElementById('fit').style.display = 'block';
+      } else {
+        document.getElementById('fit').style.display = 'none';
+      }
       if (map.getZoom() >= zoomThreshold && geomLayer == 'neighborhoods-data') {
         removeInteraction();
         geomLayer = 'census-tracts-data';
@@ -209,13 +218,13 @@
       map.setStyle(style);
       for (let step = 0; step < outlineLayers.length; step++) {
         map.setPaintProperty(outlineLayers[step], "line-color",
-        ["case", ["==", ["feature-state", "selected"], true], "#FEB42E", "#FFFFFF"]);
+          ["case", ["==", ["feature-state", "selected"], true], "#FEB42E", "#FFFFFF"]);
         map.setPaintProperty(outlineLayers[step], "line-width",
           ["case", ["==", ["feature-state", "selected"], true], 3, 1]);
         map.setPaintProperty(outlineLayers[step], "line-offset",
           ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
       }
-      
+
       // color gradation based on 'level' value
       /*
       var expression = ["interpolate",
@@ -251,6 +260,13 @@
       var geometry = event.features[0];
       setSelectedGeometry(geometry);
     }
+
+    document.getElementById('fit').addEventListener('click', function () {
+      map.fitBounds([
+        [-122.53777492130766,37.67948339642544],
+        [-122.28178000000045,37.847049047064985]
+      ]);
+    });
 
     var selectedGeom = null;
     function setSelectedGeometry(feature) {
