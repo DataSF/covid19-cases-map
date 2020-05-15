@@ -134,3 +134,41 @@ a:hover {
   overflow: auto;
   border-radius: 3px;
 }
+
+#fit {
+  display: block;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  margin: 0;
+  }
+
+  .sfgov-cta-button__container button {
+    background: #4f66ee;
+    font-family: "Rubik", sans-serif;
+    border-radius: 8px;
+    border: none;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 500;
+    padding: 13px 20px 11px;
+    text-align: center;
+    text-decoration: none;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0.5em 0.5em 0.5em 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    display: inline-block;
+    width: auto;
+    line-height: 17px;
+  }
+  
+  .sfgov-cta-button__container button:hover {
+    background: #0c1464;
+  }
+  
+  .sfgov-cta-button__container div.field {
+    padding: 0;
+  }
