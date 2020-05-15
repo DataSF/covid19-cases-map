@@ -111,7 +111,7 @@
     var outlineLayers = ['neighborhoods-outline','census-tracts-outline'];
     var referenceLayer = 'neighborhoods-reference';
     var geomSource = 'covid19_cases-1eby22';
-    var zoomThreshold = 11.5;
+    var zoomThreshold = 13;
     var initialTitle = document.getElementById('dynamic_title').innerHTML;
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
@@ -119,7 +119,7 @@
     var map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/datasf/cka1lnz4u09o81innjp1ywa92?fresh=true',
-      zoom: 13,
+      zoom: 11.5,
       center: [-122.402964, 37.767043],
       maxBounds: [[-122.626179, 37.640314], [-122.28178, 37.929844]]
     });
