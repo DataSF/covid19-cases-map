@@ -172,3 +172,33 @@ a:hover {
   .sfgov-cta-button__container div.field {
     padding: 0;
   }
+
+  .mapboxgl-popup {
+    max-width: 350px;
+  }
+  
+  .mapboxgl-popup-content {
+    font-family: 'Rubik', sans-serif;
+    background-color: #101010;
+    color: #fff;
+    margin: 0;
+    padding: 5px 10px;
+  }
+
+  .mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
+    border-bottom-color: #101010;
+    }
+  .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
+  .mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
+    border-top-color: #101010;
+    }
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+    border-right-color: #101010;
+    }
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+    border-left-color: #101010;
+    }
+  
