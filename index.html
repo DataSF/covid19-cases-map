@@ -111,11 +111,14 @@
   </script>
   <!-- Script for displaying a map and updating the sidebar with data from map -->
   <script>
+    // specify initial layers and source
     var geomLayer = 'neighborhoods-data';
     var outlineLayers = ['neighborhoods-outline', 'census-tracts-outline'];
     var referenceLayer = 'neighborhoods-reference';
     var geomSource = 'covid19_cases-1eby22';
+    // zoom threshold where first boundary switches to second - should match layer filters
     var zoomThreshold = 13;
+
     var initialTitle = document.getElementById('dynamic_title').innerHTML;
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
@@ -191,52 +194,6 @@
       map.touchZoomRotate.disableRotation();
     });
 
-    map.on('zoom', function () {
-      if (map.getZoom() > 12) {
-        document.getElementById('fit').style.display = 'block';
-      } else {
-        document.getElementById('fit').style.display = 'none';
-      }
-      if (map.getZoom() >= zoomThreshold && geomLayer == 'neighborhoods-data') {
-        removeInteraction();
-        geomLayer = 'census-tracts-data';
-        addInteraction();
-      } else if (map.getZoom() < zoomThreshold && geomLayer == 'census-tracts-data') {
-        removeInteraction();
-        geomLayer = 'neighborhoods-data';
-        addInteraction();
-      }
-    })
-
-    var popup = new mapboxgl.Popup({
-      anchor: 'left',
-      offset: 30,
-      closeButton: false
-    })
-
-    map.on('mousemove', 'neighborhoods-data', function (e) {
-      map.getCanvas().style.cursor = 'pointer';
-      popup
-        .setLngLat(e.lngLat)
-        .setHTML('Click to select, double click to zoom to ' + e.features[0].properties.id)
-        .addTo(map);
-    });
-
-    map.on('mouseleave', 'neighborhoods-data', function (e) {
-      map.getCanvas().style.cursor = '';
-      popup.remove();
-    })
-
-    map.on('dblclick', 'neighborhoods-data', function (e) {
-      map.doubleClickZoom.disable();
-      var bounds = turf.extent(e.features[0].geometry);
-      map.fitBounds(bounds);
-    })
-
-    map.on('zoomend', function(e){
-      map.doubleClickZoom.enable();
-    })
-
     function addDynamicLayerStyles() {
       // promote id from albers so we can join our data
       var style = map.getStyle();
@@ -253,16 +210,6 @@
         map.setPaintProperty(outlineLayers[step], "line-offset",
           ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
       }
-
-      // color gradation based on 'level' value
-      /*
-      var expression = ["interpolate",
-        ["linear"],
-        ["feature-state", "level"],
-        0, "#72E6E2",
-        1, "#30678D",
-      ];
-      map.setPaintProperty("census-tracts", "fill-color", expression);*/
     }
 
     /// update map state from latest data
@@ -275,26 +222,6 @@
       }
       addInteraction();
     }
-
-    function addInteraction() {
-      map.on('click', geomLayer, onClickCallback);
-    }
-
-    function removeInteraction() {
-      map.off('click', geomLayer, onClickCallback);
-    }
-
-    function onClickCallback(event) {
-      var geometry = event.features[0];
-      setSelectedGeometry(geometry);
-    }
-
-    document.getElementById('fit').addEventListener('click', function () {
-      map.fitBounds([
-        [-122.53777492130766, 37.67948339642544],
-        [-122.28178000000045, 37.847049047064985]
-      ]);
-    });
 
     var selectedGeom = null;
     function setSelectedGeometry(feature) {
@@ -366,7 +293,77 @@
         return para;
       }).reduce((acc, curr) => output.appendChild(curr));*/assignFeatureStateFromData
       output.innerHTML = lines;
+    };
+
+    // Change geomLayer on zoom, show/hide zoom to san francisco button
+    map.on('zoom', function () {
+      if (map.getZoom() > 12) {
+        document.getElementById('fit').style.display = 'block';
+      } else {
+        document.getElementById('fit').style.display = 'none';
+      }
+      if (map.getZoom() >= zoomThreshold && geomLayer == 'neighborhoods-data') {
+        removeInteraction();
+        geomLayer = 'census-tracts-data';
+        addInteraction();
+      } else if (map.getZoom() < zoomThreshold && geomLayer == 'census-tracts-data') {
+        removeInteraction();
+        geomLayer = 'neighborhoods-data';
+        addInteraction();
+      }
+    })
+
+    // Show tooltip popop so user knows they can double click to see more
+    var popup = new mapboxgl.Popup({
+      anchor: 'left',
+      offset: 30,
+      closeButton: false
+    })
+
+    map.on('mousemove', 'neighborhoods-data', function (e) {
+      map.getCanvas().style.cursor = 'pointer';
+      popup
+        .setLngLat(e.lngLat)
+        .setHTML('Click to select, double click to zoom to ' + e.features[0].properties.id)
+        .addTo(map);
+    });
+
+    map.on('mouseleave', 'neighborhoods-data', function (e) {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+    })
+
+    // Zoom polygon extents on double click, disable double click to zoom
+    map.on('dblclick', 'neighborhoods-data', function (e) {
+      map.doubleClickZoom.disable();
+      var bounds = turf.extent(e.features[0].geometry);
+      map.fitBounds(bounds);
+    })
+
+    // On zoom end re-enable double click to zoom
+    map.on('zoomend', function(e){
+      map.doubleClickZoom.enable();
+    })
+
+    function addInteraction() {
+      map.on('click', geomLayer, onClickCallback);
     }
+
+    function removeInteraction() {
+      map.off('click', geomLayer, onClickCallback);
+    }
+
+    function onClickCallback(event) {
+      var geometry = event.features[0];
+      setSelectedGeometry(geometry);
+    }
+
+    document.getElementById('fit').addEventListener('click', function () {
+      map.fitBounds([
+        [-122.53777492130766, 37.67948339642544],
+        [-122.28178000000045, 37.847049047064985]
+      ]);
+    });
   </script>
 
 </body>
