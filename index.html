@@ -6,6 +6,7 @@
   <title>Map of Confirmed Cases and Deaths | San Francisco</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
+  <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
   <link rel="stylesheet" media="all" href="//fonts.googleapis.com/css?family=Rubik:300,400,500,700">
   <link rel="stylesheet" media="all" href="index.css">
@@ -124,7 +125,7 @@
       style: 'mapbox://styles/datasf/cka1lnz4u09o81innjp1ywa92?fresh=true',
       zoom: 11.5,
       center: [-122.402964, 37.767043],
-      maxBounds: [[-122.53777492130767,37.6794833964247], [-122.28178000000041,37.847049047064274]]
+      maxBounds: [[-122.53777492130767, 37.6794833964247], [-122.28178000000041, 37.847049047064274]]
     });
 
     map.on("style.load", function () {
@@ -191,7 +192,6 @@
     });
 
     map.on('zoom', function () {
-      console.log(map.getZoom())
       if (map.getZoom() > 12) {
         document.getElementById('fit').style.display = 'block';
       } else {
@@ -206,6 +206,35 @@
         geomLayer = 'neighborhoods-data';
         addInteraction();
       }
+    })
+
+    var popup = new mapboxgl.Popup({
+      anchor: 'left',
+      offset: 30,
+      closeButton: false
+    })
+
+    map.on('mousemove', 'neighborhoods-data', function (e) {
+      map.getCanvas().style.cursor = 'pointer';
+      popup
+        .setLngLat(e.lngLat)
+        .setHTML('Click to select, double click to zoom to ' + e.features[0].properties.id)
+        .addTo(map);
+    });
+
+    map.on('mouseleave', 'neighborhoods-data', function (e) {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+    })
+
+    map.on('dblclick', 'neighborhoods-data', function (e) {
+      map.doubleClickZoom.disable();
+      var bounds = turf.extent(e.features[0].geometry);
+      map.fitBounds(bounds);
+    })
+
+    map.on('zoomend', function(e){
+      map.doubleClickZoom.enable();
     })
 
     function addDynamicLayerStyles() {
@@ -256,15 +285,14 @@
     }
 
     function onClickCallback(event) {
-      console.log('click')
       var geometry = event.features[0];
       setSelectedGeometry(geometry);
     }
 
     document.getElementById('fit').addEventListener('click', function () {
       map.fitBounds([
-        [-122.53777492130766,37.67948339642544],
-        [-122.28178000000045,37.847049047064985]
+        [-122.53777492130766, 37.67948339642544],
+        [-122.28178000000045, 37.847049047064985]
       ]);
     });
 
