@@ -125,17 +125,23 @@
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
     var map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/datasf/cka1lnz4u09o81innjp1ywa92?fresh=true',
+      style: 'mapbox://styles/datasf/ckav6d00g32uk1imp2am456qh?fresh=true',
       zoom: 11.5,
       center: [-122.402964, 37.767043],
       maxBounds: [[-122.53777492130767, 37.6794833964247], [-122.28178000000041, 37.847049047064274]]
     });
 
     map.on("style.load", function () {
+      var dataUrl = "./covid19_cases.geojson";
+
+      map.addSource("geojson", {
+        type: "geojson",
+        data: dataUrl
+      })
       addDynamicLayerStyles();
       // load data from a url, then pass it to assignFeatureStateFromData
       // TODO: point to your production data
-      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[2];
+      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[4];
       fillRamp = fillRamp.splice(2);
       var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
       var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
@@ -168,7 +174,7 @@
       item.appendChild(value);
       legend.appendChild(item);
 
-      var dataUrl = "./covid19_cases.geojson";
+      
 
       fetch(dataUrl)
         .then(function (response) {
@@ -196,7 +202,9 @@
 
     function addDynamicLayerStyles() {
       // promote id from albers so we can join our data
-      var style = map.getStyle();
+      const style = map.getStyle();
+     // const dataLayer = style.layers.find(item => item['source-layer'] === geomSource)
+     // dataLayer.source = "geojson"
       // TODO: if you are using counties, you will also need to promote a
       // county-level id for joining on feature-state
       // TODO: change this identifier to match final
