@@ -28,19 +28,11 @@
       </div>
       <div class="sidebar__content">
         <div id="dynamic_content">
-          <p>The map shows the distribution of COVID-19 incidence rates. We calculate the rate as a number of positive
-            cases per 10,000 residents. You can zoom to see these rates distributed among smaller areas.
-          </p>
-          <h2>Rates not calculated or shown where case counts fewer than 20</h2>
-          <p> Because of variability in the data, we do not show or calculate rates for small counts of fewer than 20.
-            There is a risk that rates calculated on counts lower than 20 can lead to inaccurate conclusions about the
-            virus in San Francisco. This is a standard practice to account for something called the Relative Standard
-            Error.</p>
-          <p>You can click on an area on the map to see the counts of positive cases in those areas with no calculated
-            rate.</p>
+          <p>The map shows the rate of confirmed COVID-19 cases calculated as the number of positive cases per 10,000 residents (all cumulative cases since testing began on March 2nd). The map initially displays the rates by neighborhood, but you can zoom in to see them for smaller areas known as census tracts.</p>
+          <h2>Rates not calculated in areas with fewer than twenty cases</h2>
+          <p>Because of variability in the data, the rate of cases is not calculated for areas with fewer than twenty cases. Areas without a calculated rate of incidence are indicated on the map with a yellow crosshatch pattern. However, you may still click on a yellow crosshatched area to see the actual number of cases in that region.</p>
           <h2>Certain information dropped to protect privacy</h2>
-          <p>On the map, case counts less than 10 are indicated as such. Actual counts shown are 10 or greater. For
-            areas with an underlying population of 1,000, data is dropped altogether.</p>
+          <p>To protect the privacy of San Francisco residents, the City does not disclose the actual number of confirmed cases for areas with fewer than ten confirmed. In addition, no case data is displayed for areas with an underlying population of fewer than 1,000 people. These areas are unshaded on the map.</p>
         </div>
       </div>
     </section>
@@ -165,8 +157,7 @@
 
       var item = document.createElement('div');
       var key = document.createElement('span');
-      key.className = 'legend-key';
-      key.style.backgroundColor = '#f2f2f2';
+      key.className = 'legend-key legend-key__no-rate';
       var value = document.createElement('span');
       value.innerHTML = 'Counts too small (<20)';
 
@@ -265,8 +256,11 @@
 
       // this will be in the dataset, so no counts below 10 should be in the underlying data
       var count = geom.count;
-      if (geom.count < 10) {
+      if (geom.count < 10 && geom.count > 0) {
         count = "fewer than 10"
+      }
+      if (geom.deaths < 10 && geom.deaths > 0) {
+        deaths = "fewer than 10"
       }
       if (geom.acs_population < 1000) {
         lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
@@ -274,17 +268,17 @@
         if (geom.count < 20) {
           lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
         } else {
-          lines += `<p>This area has an estimated rate of <strong>${geom.rate.toFixed(1)} positive cases</strong> per 10,000 residents.</p>`;
+          lines += `<p>This area has an estimated rate of <strong>${geom.rate.toFixed(1)} positive cases per 10,000 residents</strong>.</p>`;
         }
         lines += `<p>There are <strong>${count} positive cases</strong> among a resident <strong>population of about ${formatNumber(geom.acs_population)}</strong>.`;
         // enter logic to cast undefined to 0 deaths
-        lines += `<p>Out of the <strong>${count} positive cases</strong>, <strong>[DEATHS] individuals have died</strong>.`;
+        lines += `<p>Out of the ${count} positive cases, <strong>[DEATHS] individuals have died</strong>.`;
       }
-      lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;
+      /*lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;*/
       lines += `<h2>San Francisco offering assistance to residents</h2>`;
-      lines += `<p>San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit www.SF.gov/coronavirus or call 311.</p>`;
+      lines += `<p>San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit sf.gov/coronavirus or call 311.</p>`;
       lines += `<h3>Getting tested</h3>`;
-      lines += `<p>There are options for getting tested for COVID-19 in San Francisco for the uninsured and insured. <a href="">Learn more about how you can access testing</a>.</p>`;
+      lines += `<p>There are options for getting tested for COVID-19 in San Francisco for the uninsured and insured. <a href="https://sf.gov/find-out-how-get-tested-coronavirus">Learn more about how you can access testing</a>.</p>`;
 
       /*
       lines.push(`There are [COUNT] confirmed cases among a resident population of about [POP].`);
