@@ -115,12 +115,14 @@
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
+    var bounds = [-122.56553649902342, 37.60987994374712,  -122.31903076171875, 37.85859141570558];
+
     var map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/datasf/ckav6d00g32uk1imp2am456qh?fresh=true',
       zoom: 11.5,
-      center: [-122.402964, 37.767043],
-      maxBounds: [[-122.53777492130767, 37.6794833964247], [-122.28178000000041, 37.847049047064274]]
+      center: [-122.4202003751742, 37.761095904904494],
+      maxBounds: bounds
     });
 
     map.on("style.load", function () {
@@ -311,6 +313,8 @@
     })
 
     map.on('mousemove', 'neighborhoods-data', function (e) {
+      console.log(map.getCenter())
+      console.log(map.getBounds().toArray().toString())
       map.getCanvas().style.cursor = 'pointer';
       popup
         .setLngLat(e.lngLat)
@@ -349,10 +353,7 @@
     }
 
     document.getElementById('fit').addEventListener('click', function () {
-      map.fitBounds([
-        [-122.53777492130766, 37.67948339642544],
-        [-122.28178000000045, 37.847049047064985]
-      ]);
+      map.fitBounds([-122.51585011905863,37.67948339643232,-122.32455063128938,37.84261846669379]);
     });
   </script>
 
