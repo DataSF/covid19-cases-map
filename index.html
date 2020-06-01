@@ -133,7 +133,7 @@
       addDynamicLayerStyles();
       // load data from a url, then pass it to assignFeatureStateFromData
       // TODO: point to your production data
-      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[4];
+      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[6];
       fillRamp = fillRamp.splice(2);
       var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
       var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
@@ -256,10 +256,11 @@
 
       // this will be in the dataset, so no counts below 10 should be in the underlying data
       var count = geom.count;
-      if (geom.count < 10 && geom.count > 0) {
+      console.log(geom.count)
+      if ((geom.count < 10 || geom.count == null)) {
         count = "fewer than 10"
       }
-      if (geom.deaths < 10 && geom.deaths > 0) {
+      if ((geom.deaths < 10 || geom.deaths == null)) {
         deaths = "fewer than 10"
       }
       if (geom.acs_population < 1000) {
@@ -276,7 +277,7 @@
       }
       /*lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;*/
       lines += `<h2>San Francisco offering assistance to residents</h2>`;
-      lines += `<p>San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit sf.gov/coronavirus or call 311.</p>`;
+      lines += `<p>San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit <a href="https://sf.gov/coronavirus">sf.gov/coronavirus</a> or call 311.</p>`;
       lines += `<h3>Getting tested</h3>`;
       lines += `<p>There are options for getting tested for COVID-19 in San Francisco for the uninsured and insured. <a href="https://sf.gov/find-out-how-get-tested-coronavirus">Learn more about how you can access testing</a>.</p>`;
 
