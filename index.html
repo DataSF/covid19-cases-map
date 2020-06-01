@@ -257,7 +257,6 @@
       // this will be in the dataset, so no counts below 10 should be in the underlying data
       var count = geom.count;
       var deaths = geom.deaths;
-      console.log(geom.count)
       if (geom.count == null) {
         count = "fewer than 10"
       }
@@ -282,20 +281,7 @@
       lines += `<h3>Getting tested</h3>`;
       lines += `<p>There are options for getting tested for COVID-19 in San Francisco for the uninsured and insured. <a href="https://sf.gov/find-out-how-get-tested-coronavirus">Learn more about how you can access testing</a>.</p>`;
 
-      /*
-      lines.push(`There are [COUNT] confirmed cases among a resident population of about [POP].`);
-      lines.push(`Out of the [COUNT] confirmed cases, [DEATHS] individuals have died.`);
-      lines.push();
-      lines.push(`This data does not mean that any area of the city is more or less safe than any other area. All San Franciscans are strongly advised to continue taking all precautions to protect themselves and others (including staying home as much as possible, wearing a face covering, and staying at least 6 feet away from others).`);
-      lines.push(`San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit www.SF.gov/coronavirus or call 311.`);
-      lines.push(`The dashboard below shows the data from the map in a table format. Just like in the map, all census tracts with resident populations of less than [CONFIRM NUMBER], and any census tract with fewer than [CONFIRM NUMBER] confirmed cases are omitted in order to protect privacy. As more cases are confirmed, the dashboard will be updated.`)
-      lines.push(`The figures are updated daily and data are added as more information becomes available.`)
-      output.innerHTML = "";
-      let paras = lines.map(line => {
-        let para = document.createElement('P');
-        para.innerHTML = line;
-        return para;
-      }).reduce((acc, curr) => output.appendChild(curr));*/assignFeatureStateFromData
+      assignFeatureStateFromData
       output.innerHTML = lines;
     };
 
