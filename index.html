@@ -14,13 +14,6 @@
 
 <body>
   <section id="visual">
-    <div id="map"></div>
-    <div class="sfgov-cta-button__container">
-      <button id="fit" style="display: none;">Zoom to San Francisco</button>
-    </div>
-    <div class="map-overlay" id="legend">
-      <h2>Cases per 10,000 residents</h2>
-    </div>
     <section id="sidebar">
       <div class="sidebar__heading">
         <h1 id="dynamic_title">Map of Confirmed Cases and Deaths</h1>
@@ -36,71 +29,14 @@
         </div>
       </div>
     </section>
+    <div id="map"></div>
+    <div class="sfgov-cta-button__container">
+      <button id="fit" style="display: none;">Zoom to San Francisco</button>
+    </div>
+    <div class="map-overlay" id="legend">
+      <h2>Cases per 10,000 residents</h2>
+    </div>
   </section>
-  <!-- script for loading data from CSV -->
-  <!-- we use XMLHttpRequest to maintain maximum backward compatibility -->
-  <script>
-    /// Read CSV data published by domestic team from `source`
-    /// Parses CSV for the requested `fields`. `fields` is an object where the key is
-    /// the output key and the value is the expected column name in the data.
-    /// Calls `callback` with parsed data when successfully complete.
-    /// If there is an error, calls `errorHandler` instead.
-    function loadCSV(source, fields, callback, errorHandler) {
-      var request = new XMLHttpRequest();
-      request.open("GET", source);
-      request.onreadystatechange = function (event) {
-        if (request.readyState === XMLHttpRequest.DONE) {
-          try {
-            var text = request.responseText;
-            var entries = parseCSVForFields(text, fields);
-            if (callback) {
-              callback(entries);
-            }
-          } catch (err) {
-            console.error(err);
-            if (errorHandler) {
-              errorHandler(err);
-            }
-          }
-        }
-      };
-
-      request.send();
-    }
-
-    /// Parse CSV data and return array of objects with requested fields
-    function parseCSVForFields(text, fields) {
-      var lines = text.split("\n");
-      var sep = ",";
-
-      var keyIndices = parseHeader(lines[0], fields);
-      if (keyIndices.some(function (v) { return v.index === -1; })) {
-        throw (new Error("Heading format for data has changed. Please update this page to expect new data format."))
-      }
-
-      var entries = [];
-      for (var i = 1; i < lines.length; i += 1) {
-        if (lines[i].length === 0) {
-          continue;
-        }
-        var pieces = lines[i].split(sep);
-        var obj = keyIndices.reduce(function (collection, keyIndex) {
-          collection[keyIndex.key] = pieces[keyIndex.index].trim();
-          return collection;
-        }, {});
-        entries.push(obj);
-      }
-      return entries;
-    }
-
-    function parseHeader(row, fields) {
-      var sep = ",";
-      var headings = row.split(sep).map(function (heading) { return heading.trim(); });
-      return Object.keys(fields).map(function (key) {
-        return { key: key, index: headings.indexOf(fields[key]) };
-      });
-    }
-  </script>
   <!-- Script for displaying a map and updating the sidebar with data from map -->
   <script>
     // specify initial layers and source
@@ -115,13 +51,13 @@
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
-    var bounds = [-122.56553649902342, 37.60987994374712,  -122.31903076171875, 37.85859141570558];
+    var bounds = [-122.5151717665178,37.70717556431937,-122.35761922678356,37.84150802989126];
 
     var map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/datasf/ckav6d00g32uk1imp2am456qh?fresh=true',
-      zoom: 11.5,
-      center: [-122.4202003751742, 37.761095904904494],
+      zoom: 11.78,
+      center: [-122.43639549665045, 37.774372306273605],
       maxBounds: bounds
     });
 
@@ -133,6 +69,7 @@
         data: dataUrl
       })
       addDynamicLayerStyles();
+      addInteraction();
       // load data from a url, then pass it to assignFeatureStateFromData
       // TODO: point to your production data
       var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[6];
@@ -168,7 +105,7 @@
       legend.appendChild(item);
 
       
-
+      /*
       fetch(dataUrl)
         .then(function (response) {
           if (!response.ok) {
@@ -176,7 +113,7 @@
           }
           return response.json();
         })
-        .then(assignFeatureStateFromData);
+        .then(assignFeatureStateFromData);*/
 
       /*loadCSV(dataUrl,
         { id: "geoid10", rate: "cntpop", population: "Pop", count: "FREQUENCY" },
@@ -191,13 +128,14 @@
       }));
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
+      map.addControl(new mapboxgl.FullscreenControl({container: document.querySelector('body')}))
     });
 
     function addDynamicLayerStyles() {
       // promote id from albers so we can join our data
       const style = map.getStyle();
-     // const dataLayer = style.layers.find(item => item['source-layer'] === geomSource)
-     // dataLayer.source = "geojson"
+      const dataLayer = style.layers.find(item => item['source-layer'] === geomSource)
+      //dataLayer.source = "geojson"
       // TODO: if you are using counties, you will also need to promote a
       // county-level id for joining on feature-state
       // TODO: change this identifier to match final
@@ -232,7 +170,7 @@
       if (selectedGeom === null || selectedGeom.id !== feature.id) {
         map.setFeatureState({ source: "composite", sourceLayer: geomSource, id: feature.id }, { "selected": true });
         selectedGeom = feature;
-        getContentForLocation(feature.id);
+        getContentForLocation(feature);
       } else {
         document.getElementById('dynamic_title').innerHTML = initialTitle
         document.getElementById('dynamic_content').innerHTML = initialText;
@@ -245,37 +183,34 @@
     }
 
     // Returns text advice based on state status
-    function getContentForLocation(geomId) {
-      var geom = geomIDToData[geomId];
+    function getContentForLocation(geom) {
+      var data = geom.properties
       var title = document.getElementById("dynamic_title");
       var output = document.getElementById("dynamic_content");
-      var geomName = geomId;
+      var geomName = geom.id;
       if (geom.area_type === 'Census Tract') {
-        geomName = 'Census Tract ' + geomId.substring(5, 11)
+        geomName = 'Census Tract ' + geom.id.substring(5, 11)
       }
       title.textContent = `${geomName}`;
       var lines = "";
 
       // this will be in the dataset, so no counts below 10 should be in the underlying data
-      var count = geom.count;
-      var deaths = geom.deaths;
-      if (geom.count == null) {
-        count = "fewer than 10"
-      }
-      if (geom.deaths == null) {
-        deaths = "fewer than 10"
-      }
-      if (geom.acs_population < 1000) {
+      var countText = (data.count !== null && typeof(data.count) !== "undefined") ? data.count : "fewer than 10";
+      var deathsText = data.deaths != null ? data.deaths : "fewer than 10";
+      var rate = data.rate != null || typeof(data.rate) != "undefined" ? parseFloat(data.rate) : null;
+      var acs_population = parseInt(data.acs_population);
+
+      if (acs_population < 1000) {
         lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
       } else {
-        if (geom.count < 20) {
+        if (data.count < 20 || typeof(data.count) == "undefined" ) {
           lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
         } else {
-          lines += `<p>This area has an estimated rate of <strong>${geom.rate.toFixed(1)} positive cases per 10,000 residents</strong>.</p>`;
+          lines += `<p>This area has an estimated rate of <strong>${rate.toFixed(1)} positive cases per 10,000 residents</strong>.</p>`;
         }
-        lines += `<p>There are <strong>${count} positive cases</strong> among a resident <strong>population of about ${formatNumber(geom.acs_population)}</strong>.`;
+        lines += `<p>There are <strong>${countText} positive cases</strong> among a resident <strong>population of about ${formatNumber(acs_population)}</strong>.`;
         // enter logic to cast undefined to 0 deaths
-        lines += `<p>Out of the ${count} positive cases, <strong>${deaths} individuals have died</strong>.`;
+        lines += `<p>Out of the ${countText} positive cases, <strong>${deathsText} individuals have died</strong>.`;
       }
       /*lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;*/
       lines += `<h2>San Francisco offering help to residents</h2>`;
@@ -313,8 +248,6 @@
     })
 
     map.on('mousemove', 'neighborhoods-data', function (e) {
-      console.log(map.getCenter())
-      console.log(map.getBounds().toArray().toString())
       map.getCanvas().style.cursor = 'pointer';
       popup
         .setLngLat(e.lngLat)
@@ -353,7 +286,7 @@
     }
 
     document.getElementById('fit').addEventListener('click', function () {
-      map.fitBounds([-122.51585011905863,37.67948339643232,-122.32455063128938,37.84261846669379]);
+      map.fitBounds(bounds);
     });
   </script>
 
