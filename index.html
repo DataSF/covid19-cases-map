@@ -70,8 +70,9 @@
       })
       addDynamicLayerStyles();
       addInteraction();
-      // load data from a url, then pass it to assignFeatureStateFromData
-      // TODO: point to your production data
+      
+      // create legend, use colors from mapbox style
+      // BEWARE: array number of color ramp can change based on style ordering, must change if studio style changes
       var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[6];
       fillRamp = fillRamp.splice(2);
       var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
@@ -128,19 +129,25 @@
       }));
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
+
+      // add fullscreen control and target body of page
       map.addControl(new mapboxgl.FullscreenControl({container: document.querySelector('body')}))
     });
 
     function addDynamicLayerStyles() {
-      // promote id from albers so we can join our data
       const style = map.getStyle();
-      const dataLayer = style.layers.find(item => item['source-layer'] === geomSource)
-      //dataLayer.source = "geojson"
-      // TODO: if you are using counties, you will also need to promote a
-      // county-level id for joining on feature-state
-      // TODO: change this identifier to match final
       style.sources.composite.promoteId = "id";
+      const dataLayers = style.layers.filter(item => item['source-layer'] === geomSource)
+      dataLayers.forEach(layer => {
+        map.removeLayer(layer.id);
+        layer.source = "geojson";
+        delete layer["source-layer"];
+        map.addLayer(layer);
+      });
+      style.sources.geojson.promoteId = "id";
       map.setStyle(style);
+
+      // set selection state styles
       for (let step = 0; step < outlineLayers.length; step++) {
         map.setPaintProperty(outlineLayers[step], "line-color",
           ["case", ["==", ["feature-state", "selected"], true], "#FEB42E", "#FFFFFF"]);
@@ -165,10 +172,10 @@
     var selectedGeom = null;
     function setSelectedGeometry(feature) {
       if (selectedGeom) {
-        map.removeFeatureState({ source: "composite", sourceLayer: geomSource, id: selectedGeom.id }, "selected");
+        map.removeFeatureState({ source: "geojson", id: selectedGeom.id }, "selected");
       }
       if (selectedGeom === null || selectedGeom.id !== feature.id) {
-        map.setFeatureState({ source: "composite", sourceLayer: geomSource, id: feature.id }, { "selected": true });
+        map.setFeatureState({ source: "geojson", id: feature.id }, { "selected": true });
         selectedGeom = feature;
         getContentForLocation(feature);
       } else {
@@ -194,16 +201,16 @@
       title.textContent = `${geomName}`;
       var lines = "";
 
-      // this will be in the dataset, so no counts below 10 should be in the underlying data
-      var countText = (data.count !== null && typeof(data.count) !== "undefined") ? data.count : "fewer than 10";
-      var deathsText = data.deaths != null ? data.deaths : "fewer than 10";
-      var rate = data.rate != null || typeof(data.rate) != "undefined" ? parseFloat(data.rate) : null;
+      // parse data from strings, catch nulls which will return NaN or undefineds where the attribute is missing
+      var countText = (!isNaN(parseInt(data.count)) && typeof(data.count) !== "undefined") ? parseInt(data.count) : "fewer than 10";
+      var deathsText = !isNaN(parseInt(data.deaths)) ? parseInt(data.deaths) : "fewer than 10";
+      var rate = !isNaN(parseFloat(data.rate)) && typeof(data.rate) != "undefined" ? parseFloat(data.rate) : null;
+      // all acs_populations should be populated, not catching NaN or undefined
       var acs_population = parseInt(data.acs_population);
-
       if (acs_population < 1000) {
         lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
       } else {
-        if (data.count < 20 || typeof(data.count) == "undefined" ) {
+        if (typeof(countText) === "string" || countText < 20) {
           lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
         } else {
           lines += `<p>This area has an estimated rate of <strong>${rate.toFixed(1)} positive cases per 10,000 residents</strong>.</p>`;
