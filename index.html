@@ -51,7 +51,7 @@
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
-    var sfbounds = [-122.52996730958886,37.71310714211913,-122.34282368371146,37.83558674497198];
+    var sfbounds = [-122.51517176651764,37.70717556431859,-122.35761922678324,37.84150802989059];
 
     var map = new mapboxgl.Map({
       container: 'map',
@@ -255,6 +255,7 @@
     })
 
     map.on('mousemove', 'neighborhoods-data', function (e) {
+      console.log(map.getBounds().toArray().toString())
       map.getCanvas().style.cursor = 'pointer';
       popup
         .setLngLat(e.lngLat)
