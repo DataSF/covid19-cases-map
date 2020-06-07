@@ -255,7 +255,6 @@
     })
 
     map.on('mousemove', 'neighborhoods-data', function (e) {
-      console.log(map.getBounds().toArray().toString());
       map.getCanvas().style.cursor = 'pointer';
       popup
         .setLngLat(e.lngLat)
