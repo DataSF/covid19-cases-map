@@ -51,14 +51,14 @@
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
-    var bounds = [-122.5151717665178,37.70717556431937,-122.35761922678356,37.84150802989126];
+    var sfbounds = [-122.52996730958886,37.71310714211913,-122.34282368371146,37.83558674497198];
 
     var map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/datasf/ckav6d00g32uk1imp2am456qh?fresh=true',
       zoom: 11.78,
       center: [-122.43639549665045, 37.774372306273605],
-      maxBounds: bounds
+      maxBounds: [-122.58758917585335,37.6769123913688,-122.2965263460861,37.86740935582834]
     });
 
     map.on("style.load", function () {
@@ -210,7 +210,7 @@
       if (acs_population < 1000) {
         lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
       } else {
-        if (typeof(countText) === "string" || countText < 20) {
+        if (typeof(countText) === "string" || countText < 20 || rate === null) {
           lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
         } else {
           lines += `<p>This area has an estimated rate of <strong>${rate.toFixed(1)} positive cases per 10,000 residents</strong>.</p>`;
@@ -255,6 +255,7 @@
     })
 
     map.on('mousemove', 'neighborhoods-data', function (e) {
+      console.log(map.getBounds().toArray().toString());
       map.getCanvas().style.cursor = 'pointer';
       popup
         .setLngLat(e.lngLat)
@@ -293,7 +294,7 @@
     }
 
     document.getElementById('fit').addEventListener('click', function () {
-      map.fitBounds(bounds);
+      map.fitBounds(sfbounds);
     });
   </script>
 
