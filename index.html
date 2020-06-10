@@ -62,7 +62,7 @@
     });
 
     map.on("style.load", function () {
-      var dataUrl = "./covid19_cases.geojson";
+      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
 
       map.addSource("geojson", {
         type: "geojson",
@@ -73,7 +73,8 @@
       
       // create legend, use colors from mapbox style
       // BEWARE: array number of color ramp can change based on style ordering, must change if studio style changes
-      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[6];
+      console.log(map.getPaintProperty(geomLayer, 'fill-color'))
+      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[8];
       fillRamp = fillRamp.splice(2);
       var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
       var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
@@ -99,11 +100,20 @@
       var key = document.createElement('span');
       key.className = 'legend-key legend-key__no-rate';
       var value = document.createElement('span');
-      value.innerHTML = 'Counts too small (<20)';
-
+      value.innerHTML = 'Case counts too small (<20)';
       item.appendChild(key);
       item.appendChild(value);
       legend.appendChild(item);
+
+      var item = document.createElement('div');
+      var key = document.createElement('span');
+      key.className = 'legend-key legend-key__no-count';
+      var value = document.createElement('span');
+      value.innerHTML = '0 Cases';
+      item.appendChild(key);
+      item.appendChild(value);
+      legend.appendChild(item);
+      
 
       
       /*
@@ -255,7 +265,6 @@
     })
 
     map.on('mousemove', 'neighborhoods-data', function (e) {
-      console.log(map.getBounds().toArray().toString())
       map.getCanvas().style.cursor = 'pointer';
       popup
         .setLngLat(e.lngLat)
