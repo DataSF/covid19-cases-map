@@ -214,7 +214,7 @@
         } else {
           lines += `<p>This area has an estimated rate of <strong>${rate.toFixed(1)} positive cases per 10,000 residents</strong>.</p>`;
         }
-        lines += `<p>There are <strong>${countText} positive cases</strong> among a resident <strong>population of about ${formatNumber(acs_population)}</strong>.`;
+        lines += `<p>There are <strong>${countText} positive cases</strong> among an estimated resident <strong>population of ${formatNumber(acs_population)}</strong>.`;
         // enter logic to cast undefined to 0 deaths
         lines += `<p>Out of the ${countText} positive cases, <strong>${deathsText} individuals have died</strong>.`;
       }
