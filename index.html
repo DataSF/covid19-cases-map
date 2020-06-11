@@ -62,7 +62,7 @@
     });
 
     map.on("style.load", function () {
-      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
+      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
 
       map.addSource("geojson", {
         type: "geojson",
@@ -73,7 +73,6 @@
       
       // create legend, use colors from mapbox style
       // BEWARE: array number of color ramp can change based on style ordering, must change if studio style changes
-      console.log(map.getPaintProperty(geomLayer, 'fill-color'))
       var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[8];
       fillRamp = fillRamp.splice(2);
       var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
@@ -113,22 +112,6 @@
       item.appendChild(key);
       item.appendChild(value);
       legend.appendChild(item);
-      
-
-      
-      /*
-      fetch(dataUrl)
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(assignFeatureStateFromData);*/
-
-      /*loadCSV(dataUrl,
-        { id: "geoid10", rate: "cntpop", population: "Pop", count: "FREQUENCY" },
-        assignFeatureStateFromData);*/
 
       /* Remove rotate from control
       *  Disable drag rotate
@@ -199,14 +182,20 @@
       return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
     }
 
+    function formatCensusTract(id) {
+      var tract_num = parseInt(id.substring(5, 9),10)
+      var tract_sub = id.substring(9,11)
+      return tract_sub == "00" ? tract_num.toString() : tract_num.toString() + '.' + tract_sub.toString();
+    }
+
     // Returns text advice based on state status
     function getContentForLocation(geom) {
       var data = geom.properties
       var title = document.getElementById("dynamic_title");
       var output = document.getElementById("dynamic_content");
       var geomName = geom.id;
-      if (geom.area_type === 'Census Tract') {
-        geomName = 'Census Tract ' + geom.id.substring(5, 11)
+      if (data.area_type === 'Census Tract') {
+        geomName = 'Census Tract ' + formatCensusTract(data.id);
       }
       title.textContent = `${geomName}`;
       var lines = "";
