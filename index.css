@@ -153,7 +153,7 @@ a:hover {
   display: block;
   position: absolute;
   top: 0;
-  left: 35vw;
+  left: calc(35vw + 275px);
   margin: 10px;
   }
 
@@ -215,6 +215,14 @@ a:hover {
 .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
     border-left-color: #101010;
     }
+
+.mapboxgl-ctrl-geocoder {
+  width: auto;
+}
+
+.mapboxgl-ctrl-geocoder--input {
+    height: 41px;
+  }
   
 
 @media only screen and (max-width: 600px) {
@@ -271,5 +279,8 @@ a:hover {
 
   .sfgov-cta-button__container button {
     font-size: 13px;
+  }
+  .mapboxgl-ctrl-geocoder {
+    display: none;
   }
 }
