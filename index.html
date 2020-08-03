@@ -7,6 +7,7 @@
   <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
   <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script>
+  <script src='https://unpkg.com/simple-statistics@7.1.0/dist/simple-statistics.min.js'></script>
   <!-- Geocoder plugin -->
   <script
     src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.min.js'></script>
@@ -69,7 +70,7 @@
 
     var map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/datasf/ckav6d00g32uk1imp2am456qh?fresh=true',
+      style: 'mapbox://styles/datasf/ckdelmmp41vyg1il9j642lw02?fresh=true',
       zoom: 11.78,
       center: [-122.43639549665045, 37.774372306273605],
       maxBounds: [-122.58758917585335, 37.6769123913688, -122.2965263460861, 37.86740935582834]
@@ -77,6 +78,16 @@
 
     map.on("style.load", function () {
       var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
+
+      fetch("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=rate&$where=area_type='Census Tract'+and+rate+is+not+null&$order=rate")
+        .then((resp) => resp.json())
+        .then(function (data) {
+          console.log(data)
+          let values = data.map(function (value) {
+            return value.rate
+          })
+          console.log(ss.ckmeans(values, 5))
+        })
 
       map.addSource("geojson", {
         type: "geojson",
@@ -317,7 +328,9 @@
     document.getElementById('fit').addEventListener('click', function () {
       map.fitBounds(sfbounds);
     });
+
   </script>
 
 </body>
+
 </html>
