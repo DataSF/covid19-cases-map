@@ -103,10 +103,8 @@
       var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
       var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
       for (i = 0; i < layers.length; i++) {
-        var layer = layers[i] + " to " + layers[i + 1];
-        if (layers[i + 1] === undefined) {
-          layer = "Greater than " + layers[i];
-        }
+        var lowerbound = i == 0 ? "0": layers[i-1];
+        var layer = lowerbound + " to " + layers[i];
         var color = colors[i];
         var item = document.createElement('div');
         var key = document.createElement('span');
