@@ -107,7 +107,7 @@ a:hover {
   padding: 10px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   line-height: 18px;
-  width: 230px;
+  width: 260px;
   font-weight: 300;
   font-size: 15px;
   color: #fff;
@@ -120,6 +120,14 @@ a:hover {
   line-height: 17px;
 }
 
+.legend-note {
+  margin-bottom: 15px;
+}
+
+.legend-other {
+  margin-top: 10px;
+}
+
 .legend-key {
   display: inline-block;
   border-radius: 20%;
@@ -127,6 +135,7 @@ a:hover {
   height: 16px;
   margin-right: 5px;
   font-size: 15px;
+  opacity: 0.9;
 }
 
 .legend-key__no-rate {
