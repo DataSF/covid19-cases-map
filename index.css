@@ -120,6 +120,10 @@ a:hover {
   line-height: 17px;
 }
 
+#updated {
+  margin-top: 10px;
+}
+
 .legend-note {
   margin-bottom: 15px;
 }

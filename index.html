@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Map of Cumulative Cases and Deaths | San Francisco</title>
+  <title>Map of Cumulative Cases | San Francisco</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
   <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script>
@@ -25,20 +25,20 @@
   <section id="visual">
     <section id="sidebar">
       <div class="sidebar__heading">
-        <h1 id="dynamic_title">Map of Cumulative Cases and Deaths</h1>
-        Click on the map to highlight an area for more information.
+        <h1 id="dynamic_title">Map of Cumulative Cases</h1>
+        Click and zoom in on the map for more details.
       </div>
       <div class="sidebar__content">
         <div id="dynamic_content">
           <p>The map shows the rate of COVID-19 cases calculated as the total number of cases per 10,000
-            residents (all cumulative cases since testing began on March 2nd). The map initially displays the rates by
-            neighborhood, but you can zoom in to see rates for smaller areas known as census tracts.</p>
-          <h2>Rates not calculated in areas with fewer than twenty cases</h2>
+            residents (all cases since testing began on March 2nd). The map initially displays the rates by
+            neighborhood, zoom in to see rates for smaller areas (census tracts).</p>
+          <h2>Areas with fewer than twenty cases</h2>
           <p>Because of variability in the data, the rate of cases is not calculated for areas with fewer than twenty
-            cases. These areas are indicated on the map with a grey dotted pattern.</p>
-          <h2>Certain information dropped to protect privacy</h2>
-          <p>To protect the privacy of San Francisco residents, the City does not disclose the actual number of
-            confirmed cases for areas with fewer than ten confirmed. In addition, no case data is displayed for areas
+            cases. These areas are shaded with a grey dotted pattern.</p>
+          <h2>Privacy protections</h2>
+          <p>To protect the privacy of residents, the City does not disclose an area's number of
+            confirmed cases if it is less than ten. In addition, no case data is displayed for areas
             with resident populations of fewer than 1,000 people. These areas are dark grey on the map.</p>
         </div>
       </div>
@@ -49,10 +49,11 @@
     </div>
     <div class="map-overlay" id="legend">
       <h2>Cases per 10,000 residents</h2>
-      <div class='legend-note'>Color ramp changes to fit data <i class="fas fa-info-circle" data-tippy-content="This map is shaded by cumulative case rate and aims to highlight differences in case rates across the City. In order to appropriately shade case rates, we use a method (called ck-means) to divide the distribution of case rates into similar groups. This means the color ramps for both neighborhood and census tracts adjust as the distributions change."></i></div>
+      <div class='legend-note'>Color ramp changes to fit data <i class="fas fa-info-circle" data-tippy-content="This map displays cumulative case rates to highlight differences in rates across the City. The map legend and colors are based on the underlying distribution of the data (ck-means method). Because the data changes every day, the map legend for both neighborhood and census tracts may adjust as the data distributions change."></i></div>
       <div id="legendbins"></div>
       <div class='legend-other'>
         <div><span class="legend-key legend-key__no-rate"></span><span>Case counts too small (&lt;20)</span></div>
+        <div id="updated"></div>
       </div>
     </div>
   </section>
@@ -85,15 +86,18 @@
     
 
     map.on("style.load", function () {
-      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
+      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,last_updated_at,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
 
       //get breaks
       let censusValues = fetchDataRange("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=rate&$where=area_type='Census Tract'+and+rate+is+not+null&$order=rate")
         .then((values) => ss.ckmeans(values,5))
       let neighborhoodValues = fetchDataRange("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=rate&$where=area_type='Analysis Neighborhood'+and+rate+is+not+null&$order=rate")
         .then((values) => ss.ckmeans(values,5))
+      let lastUpdated = fetch("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=last_updated_at&$limit=1")
+        .then(((resp) => resp.json()))
+        .then((data) => data[0].last_updated_at)
 
-      Promise.all([censusValues, neighborhoodValues]).then(([censusVals, neighborhoodVals]) => {
+      Promise.all([censusValues, neighborhoodValues, lastUpdated]).then(([censusVals, neighborhoodVals, lastUpdated]) => {
         map.addSource("geojson", {
           type: "geojson",
           data: dataUrl
@@ -106,6 +110,7 @@
         setDynamicBreaks(censusBreaks,'census-tracts-data');
         addDynamicLayerStyles();
         addInteraction();
+        updated.innerHTML = "Data updated end of day on " + Intl.DateTimeFormat('en-US').format(new Date(lastUpdated)) + ", lagged 3 days"
         createLegend(geomLayer);
         tippy('[data-tippy-content]', {
           placement: 'right'
@@ -148,7 +153,7 @@
         })
     }
 
-    function createLegend(geomLayer) {
+    function createLegend(geomLayer, lastUpdated) {
       // create legend, use colors from mapbox style
       // BEWARE: array number of color ramp can change based on style ordering, must change if studio style changes
       legendbins.innerHTML = ''
@@ -271,11 +276,11 @@
         if (typeof (countText) === "string" || countText < 20 || rate === null) {
           lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
         } else {
-          lines += `<p>This area has an estimated rate of <strong>${rate.toFixed(1)} cases per 10,000 residents</strong>.</p>`;
+          lines += `<p><strong>Estimated case rate:</strong> ${rate.toFixed(1)} cases per 10,000 residents.</p>`;
         }
-        lines += `<p>There are <strong>${formatNumber(countText)} cases</strong> among an estimated resident <strong>population of ${formatNumber(acs_population)}</strong>.`;
+        lines += `<p><strong>Confirmed cases:</strong> ${formatNumber(countText)} cases among an estimated resident population of ${formatNumber(acs_population)}.`;
         // enter logic to cast undefined to 0 deaths
-        lines += `<p>Out of the ${formatNumber(countText)} cases, <strong>${deathsText} individuals have died</strong>.`;
+        lines += `<p><strong>Confirmed deaths:</strong> ${deathsText} individuals have died.`;
       }
       /*lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;*/
       lines += `<h2>San Francisco offering help to residents</h2>`;
