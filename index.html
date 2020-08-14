@@ -3,15 +3,17 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Map of Confirmed Cases and Deaths | San Francisco</title>
+  <title>Map of Cumulative Cases | San Francisco</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
-  <script src="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.js"></script>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
   <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script>
+  <script src='https://unpkg.com/simple-statistics@7.1.0/dist/simple-statistics.min.js'></script>
+  <script src="https://kit.fontawesome.com/cf7d3a45b6.js" crossorigin="anonymous"></script>
   <!-- Geocoder plugin -->
   <script
     src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.min.js'></script>
   <!-- Styles -->
-  <link href="https://api.mapbox.com/mapbox-gl-js/v1.9.1/mapbox-gl.css" rel="stylesheet" />
+  <link href="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.css" rel="stylesheet" />
   <link rel='stylesheet'
     href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.css'
     type='text/css' />
@@ -23,23 +25,21 @@
   <section id="visual">
     <section id="sidebar">
       <div class="sidebar__heading">
-        <h1 id="dynamic_title">Map of Confirmed Cases and Deaths</h1>
-        Click on the map to highlight an area for more information.
+        <h1 id="dynamic_title">Map of Cumulative Cases</h1>
+        Click and zoom in on the map for more details.
       </div>
       <div class="sidebar__content">
         <div id="dynamic_content">
-          <p>The map shows the rate of confirmed COVID-19 cases calculated as the number of positive cases per 10,000
-            residents (all cumulative cases since testing began on March 2nd). The map initially displays the rates by
-            neighborhood, but you can zoom in to see rates for smaller areas known as census tracts.</p>
-          <h2>Rates not calculated in areas with fewer than twenty cases</h2>
+          <p>The map shows the rate of COVID-19 cases calculated as the total number of cases per 10,000
+            residents (all cases since testing began on March 2nd). The map initially displays the rates by
+            neighborhood, zoom in to see rates for smaller areas (census tracts).</p>
+          <h2>Areas with fewer than twenty cases</h2>
           <p>Because of variability in the data, the rate of cases is not calculated for areas with fewer than twenty
-            cases. Areas without a calculated rate of incidence are indicated on the map with a yellow crosshatch
-            pattern. However, you may still click on a yellow crosshatched area to see the actual number of cases in
-            that region.</p>
-          <h2>Certain information dropped to protect privacy</h2>
-          <p>To protect the privacy of San Francisco residents, the City does not disclose the actual number of
-            confirmed cases for areas with fewer than ten confirmed. In addition, no case data is displayed for areas
-            with an underlying population of fewer than 1,000 people. These areas are unshaded on the map.</p>
+            cases. These areas are shaded with a grey dotted pattern.</p>
+          <h2>Privacy protections</h2>
+          <p>To protect the privacy of residents, the City does not disclose an area's number of
+            confirmed cases if it is less than ten. In addition, no case data is displayed for areas
+            with resident populations of fewer than 1,000 people. These areas are dark grey on the map.</p>
         </div>
       </div>
     </section>
@@ -49,8 +49,16 @@
     </div>
     <div class="map-overlay" id="legend">
       <h2>Cases per 10,000 residents</h2>
+      <div class='legend-note'>Color ramp changes to fit data <i class="fas fa-info-circle" data-tippy-content="This map displays cumulative case rates to highlight differences in rates across the City. The map legend and colors are based on the underlying distribution of the data (ck-means method). Because the data changes every day, the map legend for both neighborhood and census tracts may adjust as the data distributions change."></i></div>
+      <div id="legendbins"></div>
+      <div class='legend-other'>
+        <div><span class="legend-key legend-key__no-rate"></span><span>Case counts too small (&lt;20)</span></div>
+        <div id="updated"></div>
+      </div>
     </div>
   </section>
+  <script src="https://unpkg.com/@popperjs/core@2"></script>
+  <script src="https://unpkg.com/tippy.js@6"></script>
   <!-- Script for displaying a map and updating the sidebar with data from map -->
   <script>
     // specify initial layers and source
@@ -69,77 +77,51 @@
 
     var map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/datasf/ckav6d00g32uk1imp2am456qh?fresh=true',
+      style: 'mapbox://styles/datasf/ckdelmmp41vyg1il9j642lw02?fresh=true',
       zoom: 11.78,
       center: [-122.43639549665045, 37.774372306273605],
       maxBounds: [-122.58758917585335, 37.6769123913688, -122.2965263460861, 37.86740935582834]
     });
 
+    
+
     map.on("style.load", function () {
-      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
+      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,last_updated_at,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
 
-      map.addSource("geojson", {
-        type: "geojson",
-        data: dataUrl
+      //get breaks
+      let censusValues = fetchDataRange("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=rate&$where=area_type='Census Tract'+and+rate+is+not+null&$order=rate")
+        .then((values) => ss.ckmeans(values,5))
+      let neighborhoodValues = fetchDataRange("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=rate&$where=area_type='Analysis Neighborhood'+and+rate+is+not+null&$order=rate")
+        .then((values) => ss.ckmeans(values,5))
+      let lastUpdated = fetch("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=last_updated_at&$limit=1")
+        .then(((resp) => resp.json()))
+        .then((data) => data[0].last_updated_at)
+
+      Promise.all([censusValues, neighborhoodValues, lastUpdated]).then(([censusVals, neighborhoodVals, lastUpdated]) => {
+        map.addSource("geojson", {
+          type: "geojson",
+          data: dataUrl
+        })
+        // generate breaks
+        let neighborhoodBreaks = neighborhoodVals.reduce((acc, val) => acc.concat(Math.ceil(val[val.length - 1])), [])
+        let censusBreaks = censusVals.reduce((acc, val) => acc.concat(Math.ceil(val[val.length - 1])), [])
+        // set breaks
+        setDynamicBreaks(neighborhoodBreaks,'neighborhoods-data');
+        setDynamicBreaks(censusBreaks,'census-tracts-data');
+        addDynamicLayerStyles();
+        addInteraction();
+        updated.innerHTML = "Data updated end of day on " + Intl.DateTimeFormat('en-US').format(new Date(lastUpdated)) + ", lagged 3 days"
+        createLegend(geomLayer);
+        tippy('[data-tippy-content]', {
+          placement: 'right'
+        });
       })
-      addDynamicLayerStyles();
-      addInteraction();
-
-      // create legend, use colors from mapbox style
-      // BEWARE: array number of color ramp can change based on style ordering, must change if studio style changes
-      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[8];
-      fillRamp = fillRamp.splice(2);
-      var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
-      var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
-      for (i = 0; i < layers.length; i++) {
-        var layer = layers[i] + " to " + layers[i + 1];
-        if (layers[i + 1] === undefined) {
-          layer = "Greater than " + layers[i];
-        }
-        var color = colors[i];
-        var item = document.createElement('div');
-        var key = document.createElement('span');
-        key.className = 'legend-key';
-        key.style.backgroundColor = color;
-        var value = document.createElement('span');
-        value.innerHTML = layer;
-
-        item.appendChild(key);
-        item.appendChild(value);
-        legend.appendChild(item);
-      }
-
-      var item = document.createElement('div');
-      var key = document.createElement('span');
-      key.className = 'legend-key legend-key__no-rate';
-      var value = document.createElement('span');
-      value.innerHTML = 'Case counts too small (<20)';
-      item.appendChild(key);
-      item.appendChild(value);
-      legend.appendChild(item);
-
-      var item = document.createElement('div');
-      var key = document.createElement('span');
-      key.className = 'legend-key legend-key__no-count';
-      var value = document.createElement('span');
-      value.innerHTML = '0 Cases';
-      item.appendChild(key);
-      item.appendChild(value);
-      legend.appendChild(item);
-
+      
       /* Remove rotate from control
       *  Disable drag rotate
       *  Disable touch zoom rotate
       */
-      map.addControl(new mapboxgl.NavigationControl({
-        showCompass: false
-      }));
-      map.dragRotate.disable();
-      map.touchZoomRotate.disableRotation();
-
-      // add fullscreen control and target body of page
-      map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('body') }))
-
+      //initialize geocoder
       var geocoder = new MapboxGeocoder({
         accessToken: mapboxgl.accessToken, // Set the access token
         mapboxgl: mapboxgl, // Set the mapbox-gl instance
@@ -147,8 +129,67 @@
         placeholder: 'Search for places in SF',
         bbox: [-122.6001, 37.6403, -122.2818, 37.8481] // Set the bounding box coordinates
       });
+
+      // add map controls, navigation, fullscreen, geocoder
+      map.addControl(new mapboxgl.NavigationControl({
+        showCompass: false
+      }));
+      map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('body') }))
       map.addControl(geocoder, 'top-left');
+
+      // disable map functions: drag rotate and touch zoom rotate
+      map.dragRotate.disable();
+      map.touchZoomRotate.disableRotation();
     });
+
+    function fetchDataRange(url) {
+      return fetch(url)
+        .then((resp) => resp.json())
+        .then(function (data) {
+          let values = data.map(function (value) {
+            return value.rate
+          })
+          return values
+        })
+    }
+
+    function createLegend(geomLayer, lastUpdated) {
+      // create legend, use colors from mapbox style
+      // BEWARE: array number of color ramp can change based on style ordering, must change if studio style changes
+      legendbins.innerHTML = ''
+      var fillRamp = map.getPaintProperty(geomLayer, 'fill-color')[8];
+      fillRamp = fillRamp.splice(2);
+      var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
+      var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
+      for (i = 0; i < layers.length; i++) {
+        var lowerbound = i == 0 ? "20 " : layers[i - 1];
+        var layer = lowerbound + " to " + layers[i];
+        var color = colors[i];
+        var item = document.createElement('div');
+        var key = document.createElement('span');
+        key.className = 'legend-key';
+        key.style.backgroundColor = color;
+        var value = document.createElement('span');
+        value.innerHTML = layer;
+        item.appendChild(key);
+        item.appendChild(value);
+        legendbins.appendChild(item);
+      }
+    }
+
+    function setDynamicBreaks(breaks, layer) {
+      // get paint property
+      let paintProperty = map.getPaintProperty(layer, 'fill-color')
+      // update paint property
+      let paintSteps = paintProperty[8];
+      let j = 0
+      for (let i = 3; i < paintSteps.length; i+=2) {
+        paintSteps[i] = breaks[j];
+        j++;
+      }
+      // set paint property
+      map.setPaintProperty(layer,'fill-color', paintProperty)
+    }
 
     function addDynamicLayerStyles() {
       const style = map.getStyle();
@@ -235,15 +276,15 @@
         if (typeof (countText) === "string" || countText < 20 || rate === null) {
           lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
         } else {
-          lines += `<p>This area has an estimated rate of <strong>${rate.toFixed(1)} positive cases per 10,000 residents</strong>.</p>`;
+          lines += `<p><strong>Estimated case rate:</strong> ${rate.toFixed(1)} cases per 10,000 residents.</p>`;
         }
-        lines += `<p>There are <strong>${countText} positive cases</strong> among an estimated resident <strong>population of ${formatNumber(acs_population)}</strong>.`;
+        lines += `<p><strong>Confirmed cases:</strong> ${formatNumber(countText)} cases among an estimated resident population of ${formatNumber(acs_population)}.`;
         // enter logic to cast undefined to 0 deaths
-        lines += `<p>Out of the ${countText} positive cases, <strong>${deathsText} individuals have died</strong>.`;
+        lines += `<p><strong>Confirmed deaths:</strong> ${deathsText} individuals have died.`;
       }
       /*lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;*/
       lines += `<h2>San Francisco offering help to residents</h2>`;
-      lines += `<p>San Francisco is offering a variety of resources to support residents, such as childcare for essential workers, help for residents needing access to food, and financial assistance for small businesses. For information about all the resources available, visit <a href="https://sf.gov/coronavirus">sf.gov/coronavirus</a> or call 311.</p>`;
+      lines += `<p>San Francisco is offering a variety of resources to support residents during the pandemic. Visit <a href="https://sf.gov/coronavirus">sf.gov/coronavirus</a> or call 311 for more information.</p>`;
       lines += `<h3>Getting tested</h3>`;
       lines += `<p>There are options for getting tested for COVID-19 in San Francisco for the uninsured and insured. <a href="https://sf.gov/find-out-how-get-tested-coronavirus">Learn more about how you can access testing</a>.</p>`;
 
@@ -261,10 +302,12 @@
       if (map.getZoom() >= zoomThreshold && geomLayer == 'neighborhoods-data') {
         removeInteraction();
         geomLayer = 'census-tracts-data';
+        createLegend(geomLayer);
         addInteraction();
       } else if (map.getZoom() < zoomThreshold && geomLayer == 'census-tracts-data') {
         removeInteraction();
         geomLayer = 'neighborhoods-data';
+        createLegend(geomLayer);
         addInteraction();
       }
     })
@@ -317,7 +360,9 @@
     document.getElementById('fit').addEventListener('click', function () {
       map.fitBounds(sfbounds);
     });
+
   </script>
 
 </body>
+
 </html>
