@@ -40,6 +40,8 @@
           <p>To protect the privacy of residents, the City does not disclose an area's number of
             confirmed cases if it is less than ten. In addition, no case data is displayed for areas
             with resident populations of fewer than 1,000 people. These areas are dark grey on the map.</p>
+          <h2>Map changes</h2>
+          <p>This map displays cumulative case rates to highlight differences in rates across the City. The map legend and colors are based on the underlying distribution of the data (ck-means method). Because the data changes every day, the map legend for both neighborhood and census tracts may adjust as the data distributions change. </p>
         </div>
       </div>
     </section>
@@ -110,7 +112,7 @@
         setDynamicBreaks(censusBreaks,'census-tracts-data');
         addDynamicLayerStyles();
         addInteraction();
-        updated.innerHTML = "Data updated end of day on " + Intl.DateTimeFormat('en-US').format(new Date(lastUpdated)) + ", lagged 3 days"
+        updated.innerHTML = "Data refreshed end of day on " + Intl.DateTimeFormat('en-US').format(new Date(lastUpdated));
         createLegend(geomLayer);
         tippy('[data-tippy-content]', {
           placement: 'right'
