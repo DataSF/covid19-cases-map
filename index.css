@@ -32,7 +32,6 @@ h2 {
   margin: 0;
   font-weight: 500;
   line-height: 21px;
-  padding-bottom: 5px;
 }
 
 h3 {
@@ -118,6 +117,7 @@ a:hover {
   font-weight: 500;
   font-size: 17px;
   line-height: 17px;
+  padding-bottom: 5px;
 }
 
 #updated {
