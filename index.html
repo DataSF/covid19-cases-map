@@ -79,13 +79,11 @@
 
     var map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/datasf/ckdelmmp41vyg1il9j642lw02?fresh=true',
+      style: 'mapbox://styles/datasf/ckdelmmp41vyg1il9j642lw02',
       zoom: 11.78,
       center: [-122.43639549665045, 37.774372306273605],
       maxBounds: [-122.58758917585335, 37.6769123913688, -122.2965263460861, 37.86740935582834]
     });
-
-    
 
     map.on("style.load", function () {
       var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,last_updated_at,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
@@ -112,7 +110,10 @@
         setDynamicBreaks(censusBreaks,'census-tracts-data');
         addDynamicLayerStyles();
         addInteraction();
-        updated.innerHTML = "Data refreshed end of day on " + Intl.DateTimeFormat('en-US').format(new Date(lastUpdated));
+        let refreshDate = new Date(lastUpdated)
+        // data lagged by 3 days, so need to subtract from the updated date which reflects when the script last ran which is the night before the morning push to open data
+        let updatedDate = refreshDate.setDate(refreshDate.getDate() - 2)
+        updated.innerHTML = "Data through " + Intl.DateTimeFormat('en-US').format(updatedDate)  + ", lagged 3 days. <a href='https://data.sfgov.org/stories/s/nudz-9tg2' style='color:white;'>Learn more about how this data is updated and validated daily.</a>";
         createLegend(geomLayer);
         tippy('[data-tippy-content]', {
           placement: 'right'
