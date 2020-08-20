@@ -111,7 +111,7 @@
         addDynamicLayerStyles();
         addInteraction();
         let refreshDate = new Date(lastUpdated)
-        // data lagged by 3 days, so need to subtract from the updated date which reflects when the script last ran
+        // data lagged by 3 days, so need to subtract from the updated date which reflects when the script last ran which is the night before the morning push to open data
         let updatedDate = refreshDate.setDate(refreshDate.getDate() - 2)
         updated.innerHTML = "Data through " + Intl.DateTimeFormat('en-US').format(updatedDate)  + ", lagged 3 days. <a href='https://data.sfgov.org/stories/s/nudz-9tg2' style='color:white;'>Learn more about how this data is updated and validated daily.</a>";
         createLegend(geomLayer);
