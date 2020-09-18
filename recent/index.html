@@ -104,7 +104,7 @@
 
       lastUpdated.then((throughDate) => setData(throughDate))
 
-      /* Remove rotate from control
+      /* Remove rotate from control 
       *  Disable drag rotate
       *  Disable touch zoom rotate
       */
@@ -143,7 +143,7 @@
     function setData(throughDate) {
       throughDate = new Date(throughDate)
       let throughDateFormat = Intl.DateTimeFormat('en-US').format(throughDate);
-      let fromDate = new Date(throughDate.setDate(throughDate.getDate() - 29));
+      let fromDate = new Date(throughDate.setDate(throughDate.getDate() - 31));
       let fromDateISO = fromDate.toISOString().substring(0, 9);
       let fromDateFormat = Intl.DateTimeFormat('en-US').format(fromDate);
 
