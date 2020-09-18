@@ -88,8 +88,15 @@ a:hover {
   border-bottom: 1px solid #eee;
   min-height: 60px;
   padding: 10px;
-  background-color: #A9D6EA;
   color: #1c3e57;
+}
+
+.sidebar__heading-blue {
+  background-color: #A9D6EA;
+}
+
+.sidebar__heading-green {
+  background-color: #C0E2C5;
 }
 
 .sidebar__content {
