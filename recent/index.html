@@ -144,7 +144,7 @@
       throughDate = new Date(throughDate)
       let throughDateFormat = Intl.DateTimeFormat('en-US').format(throughDate);
       let fromDate = new Date(throughDate.setDate(throughDate.getDate() - 29));
-      let fromDateISO = fromDate.toISOString().substring(0, 9);
+      let fromDateISO = fromDate.toISOString().substring(0, 10);
       let fromDateFormat = Intl.DateTimeFormat('en-US').format(fromDate);
 
       var dataUrl = `https://data.sfgov.org/resource/d2ef-idww.geojson?$select=id,area_type,multipolygon,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=(area_type='Census Tract'+or+area_type='Analysis Neighborhood')+and+specimen_collection_date>='${fromDateISO}'&$group=id,area_type,multipolygon`
