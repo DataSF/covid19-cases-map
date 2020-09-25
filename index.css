@@ -103,8 +103,6 @@ a:hover {
   padding: 10px;
 }
 
-
-
 #dynamic_content {
   margin-top: 0;
 }
@@ -116,7 +114,7 @@ a:hover {
   width: 260px;
   font-weight: 300;
   font-size: 15px;
-  color: #fff;
+  color: #FFF;
   margin: 60px 10px;
 }
 
@@ -146,24 +144,33 @@ a:hover {
   height: 16px;
   margin-right: 5px;
   font-size: 15px;
-  opacity: 0.9;
 }
 
 .legend-key__no-rate {
   background: #eff3ff url(noun_dots_10563.svg);
-  opacity: 0.6;
+  opacity: 0.8;
+}
+
+.legend-key__no-rate-green {
+  background: #edf8e9 url(noun_dots_10563.svg);
+  opacity: 0.8;
 }
 
 .legend-key__no-count {
   background: #adadad;
-  opacity: 0.6;
+  opacity: 0.9;
+}
+
+.legend-key__data-dropped {
+  background: #2A2C2C;
 }
 
 .map-overlay {
   position: absolute;
   top: 0;
   left: 35vw;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
+  /*background: rgba(226, 226, 226, 0.95);*/
   margin-right: 20px;
   overflow: auto;
   border-radius: 3px;

@@ -31,20 +31,14 @@
       </div>
       <div class="sidebar__content">
         <div id="dynamic_content">
-          <p>The map shows the rate of new COVID-19 cases confirmed over a 30 day period covering through the most recent reported data. Rates are calculated as the number of new
-            cases per 10,000 residents. The map initially displays the rates by neighborhood, zoom in to see rates for
+          <p>The map initially displays the rates of new confirmed cases per 10,000 people over 30 days by neighborhood. Zoom in to see rates for
             smaller areas (census tracts).​</p>
-          <h2>Areas with fewer than twenty cases</h2>
-          <p>Because of variability in the data, the rate of new cases is not calculated for areas with fewer than
-            twenty new cases. These areas are shaded with a grey dotted pattern.​</p>
-          <h2>Privacy protections</h2>
-          <p>To protect the privacy of residents, the City does not disclose the number of new confirmed cases in areas
-            where the total cumulative cases is less than 10. In addition, no case data is shown for areas with resident
-            populations of fewer than 1,000 people. These areas are dark grey on the map.​</p>
-          <h2>Map updates reflect underlying data</h2>
-          <p>This map displays new case rates to show differences in rates across the City. The map legend and colors
-            are based on the underlying distribution of the data, which is updated daily. The map legend for both
-            neighborhood and census tracts may adjust as the data distributions change.​</p>
+          <h2>Rates not calculated for areas with fewer than 20 new cases</h2>
+          <p>Rates of small case counts are less reliable and are not calculated. These areas are shaded with a green dotted pattern.​</p>
+          <h2>Certain data dropped to protect privacy</h2>
+          <p>To protect the privacy of residents, the City does not disclose the number of cases in areas
+            where the cumulative cases since March 2nd are less than 10. In addition, no cases are shown for areas with resident
+            populations of fewer than 1,000 people. In both cases, these areas are dark grey on the map.​</p>
         </div>
       </div>
     </section>
@@ -53,14 +47,15 @@
       <button id="fit" style="display: none;">Zoom to San Francisco</button>
     </div>
     <div class="map-overlay" id="legend">
-      <h2>Cases per 10,000 residents</h2>
+      <h2>New cases per 10,000 residents</h2>
       <div class='legend-note'>Color ramp changes to fit data <i class="fas fa-info-circle"
-          data-tippy-content="This map displays cumulative case rates to highlight differences in rates across the City. The map legend and colors are based on the underlying distribution of the data (ck-means method). Because the data changes every day, the map legend for both neighborhood and census tracts may adjust as the data distributions change."></i>
+          data-tippy-content="The map legend and colors are based on the underlying distribution of the data. The legend for both neighborhood and census tracts may adjust as the data distributions change."></i>
       </div>
       <div id="legendbins"></div>
       <div class='legend-other'>
-        <div><span class="legend-key legend-key__no-count"></span><span>0 New Cases</span></div>
-        <div><span class="legend-key legend-key__no-rate"></span><span>Case counts too small (&lt;20)</span></div>
+        <div><span class="legend-key legend-key__no-rate-green"></span><span>New case rate not calculated</span></div>
+        <div><span class="legend-key legend-key__data-dropped"></span><span>Data dropped for privacy</span></div>
+        <div><span class="legend-key legend-key__no-count"></span><span>0 new cases</span></div>
         <div id="updated"></div>
       </div>
     </div>
@@ -169,7 +164,7 @@
         setDynamicBreaks(censusBreaks, 'census-tracts-data');
         addDynamicLayerStyles();
         addInteraction();
-        let caseRangeText = `New cases shown between ${fromDateFormat} and ${throughDateFormat}`
+        let caseRangeText = `New cases confirmed between ${fromDateFormat} and ${throughDateFormat}`
         new_cases_between.innerHTML = caseRangeText;
         updated.innerHTML = caseRangeText;
         createLegend(geomLayer);
@@ -238,7 +233,7 @@
         map.setPaintProperty(outlineLayers[step], "line-width",
           ["case", ["==", ["feature-state", "selected"], true], 3, 1]);
         map.setPaintProperty(outlineLayers[step], "line-offset",
-          ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
+          ["case", ["==", ["feature-state", "selected"], true], 2, 0]);
       }
     }
 
@@ -301,7 +296,7 @@
         lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
       } else {
         if (typeof (countText) === "string" || countText < 20 || rate === null) {
-          lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
+          lines += `<p>Rates are not calculated for ${geomName} because the new cases are fewer than 20.</p>`;
         } else {
           lines += `<p><strong>Estimated new case rate:</strong> ${rate.toFixed(1)} cases per 10,000 residents over a 30 day period.</p>`;
         }
@@ -386,6 +381,8 @@
 
     document.getElementById('fit').addEventListener('click', function () {
       map.fitBounds(sfbounds);
+      // resets sidebar by selecting the currently selected geometry
+      setSelectedGeometry(selectedGeom)
     });
 
   </script>
