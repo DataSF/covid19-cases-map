@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "http-server": "^0.12.3"
+  },
+  "dependencies": {
+    "base-64": "^0.1.0"
   }
 }

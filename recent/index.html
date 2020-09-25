@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Map of Cumulative Cases | San Francisco</title>
+  <title>Map of New Cases | San Francisco</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v1.11.1/mapbox-gl.js"></script>
   <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v2.0.2/turf.min.js'></script>
@@ -18,30 +18,27 @@
     href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.5.1/mapbox-gl-geocoder.css'
     type='text/css' />
   <link rel="stylesheet" media="all" href="//fonts.googleapis.com/css?family=Rubik:300,400,500,700">
-  <link rel="stylesheet" media="all" href="index.css">
+  <link rel="stylesheet" media="all" href="/index.css">
 </head>
 
 <body>
   <section id="visual">
     <section id="sidebar">
-      <div class="sidebar__heading sidebar__heading-blue">
-        <h1 id="dynamic_title">Map of Cumulative Cases</h1>
-        Click and zoom in on the map for more details.
+      <div class="sidebar__heading sidebar__heading-green">
+        <h1 id="dynamic_title">Map of New Cases</h1>
+        <div id="new_cases_between"></div>
+        <div>Click and zoom in on the map for more details.</div>
       </div>
       <div class="sidebar__content">
         <div id="dynamic_content">
-          <p>The map shows the rate of COVID-19 cases calculated as the total number of cases per 10,000
-            residents (all cases since testing began on March 2nd). The map initially displays the rates by
-            neighborhood, zoom in to see rates for smaller areas (census tracts).</p>
-          <h2>Areas with fewer than twenty cases</h2>
-          <p>Because of variability in the data, the rate of cases is not calculated for areas with fewer than twenty
-            cases. These areas are shaded with a grey dotted pattern.</p>
-          <h2>Privacy protections</h2>
-          <p>To protect the privacy of residents, the City does not disclose an area's number of
-            confirmed cases if it is less than ten. In addition, no case data is displayed for areas
-            with resident populations of fewer than 1,000 people. These areas are dark grey on the map.</p>
-          <h2>Map updates reflect underlying data</h2>
-          <p>This map displays cumulative case rates to highlight differences in rates across the City. The map legend and colors are based on the underlying distribution of the data (ck-means method). Because the data changes every day, the map legend for both neighborhood and census tracts may adjust as the data distributions change.</p>
+          <p>The map initially displays the rates of new confirmed cases per 10,000 people over 30 days by neighborhood. Zoom in to see rates for
+            smaller areas (census tracts).​</p>
+          <h2>Rates not calculated for areas with fewer than 20 new cases</h2>
+          <p>Rates of small case counts are less reliable and are not calculated. These areas are shaded with a green dotted pattern.​</p>
+          <h2>Certain data dropped to protect privacy</h2>
+          <p>To protect the privacy of residents, the City does not disclose the number of cases in areas
+            where the cumulative cases since March 2nd are less than 10. In addition, no cases are shown for areas with resident
+            populations of fewer than 1,000 people. In both cases, these areas are dark grey on the map.​</p>
         </div>
       </div>
     </section>
@@ -50,11 +47,15 @@
       <button id="fit" style="display: none;">Zoom to San Francisco</button>
     </div>
     <div class="map-overlay" id="legend">
-      <h2>Cases per 10,000 residents</h2>
-      <div class='legend-note'>Color ramp changes to fit data <i class="fas fa-info-circle" data-tippy-content="This map displays cumulative case rates to highlight differences in rates across the City. The map legend and colors are based on the underlying distribution of the data (ck-means method). Because the data changes every day, the map legend for both neighborhood and census tracts may adjust as the data distributions change."></i></div>
+      <h2>New cases per 10,000 residents</h2>
+      <div class='legend-note'>Color ramp changes to fit data <i class="fas fa-info-circle"
+          data-tippy-content="The map legend and colors are based on the underlying distribution of the data. The legend for both neighborhood and census tracts may adjust as the data distributions change."></i>
+      </div>
       <div id="legendbins"></div>
       <div class='legend-other'>
-        <div><span class="legend-key legend-key__no-rate"></span><span>Case counts too small (&lt;20)</span></div>
+        <div><span class="legend-key legend-key__no-rate-green"></span><span>New case rate not calculated</span></div>
+        <div><span class="legend-key legend-key__data-dropped"></span><span>Data dropped for privacy</span></div>
+        <div><span class="legend-key legend-key__no-count"></span><span>0 new cases</span></div>
         <div id="updated"></div>
       </div>
     </div>
@@ -74,53 +75,31 @@
     var initialTitle = document.getElementById('dynamic_title').innerHTML;
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
+    // user and password
+    let user = '36hj99nio6hzkixhwcq5x3sn6'
+    let pass = '6cbk7p7e0zd5wzbqvkm3u619r5drsqi4qclqb7rm20voc0l6es'
+
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
     var sfbounds = [-122.51517176651764, 37.70717556431859, -122.35761922678324, 37.84150802989059];
 
     var map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/datasf/ckdelmmp41vyg1il9j642lw02',
+      style: 'mapbox://styles/datasf/ckf43xxyc164d1bs0j1eeqfku',
       zoom: 11.78,
       center: [-122.43639549665045, 37.774372306273605],
       maxBounds: [-122.58758917585335, 37.6769123913688, -122.2965263460861, 37.86740935582834]
     });
 
     map.on("style.load", function () {
-      var dataUrl = "https://data.sfgov.org/resource/tpyr-dvnc.geojson?$select=id,area_type,count,rate,deaths,acs_population,last_updated_at,multipolygon&$where=area_type='Census Tract'+or+area_type='Analysis Neighborhood'";
 
-      //get breaks
-      let censusValues = fetchDataRange("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=rate&$where=area_type='Census Tract'+and+rate+is+not+null&$order=rate")
-        .then((values) => ss.ckmeans(values,5))
-      let neighborhoodValues = fetchDataRange("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=rate&$where=area_type='Analysis Neighborhood'+and+rate+is+not+null&$order=rate")
-        .then((values) => ss.ckmeans(values,5))
-      let lastUpdated = fetch("https://data.sfgov.org/resource/tpyr-dvnc.json?$select=last_updated_at&$limit=1")
+      //calculate date
+      let lastUpdated = fetch("https://data.sfgov.org/resource/d2ef-idww.json?$select=max(specimen_collection_date)&$limit=1")
         .then(((resp) => resp.json()))
-        .then((data) => data[0].last_updated_at)
+        .then((data) => data[0].max_specimen_collection_date)
 
-      Promise.all([censusValues, neighborhoodValues, lastUpdated]).then(([censusVals, neighborhoodVals, lastUpdated]) => {
-        map.addSource("geojson", {
-          type: "geojson",
-          data: dataUrl
-        })
-        // generate breaks
-        let neighborhoodBreaks = neighborhoodVals.reduce((acc, val) => acc.concat(Math.ceil(val[val.length - 1])), [])
-        let censusBreaks = censusVals.reduce((acc, val) => acc.concat(Math.ceil(val[val.length - 1])), [])
-        // set breaks
-        setDynamicBreaks(neighborhoodBreaks,'neighborhoods-data');
-        setDynamicBreaks(censusBreaks,'census-tracts-data');
-        addDynamicLayerStyles();
-        addInteraction();
-        let refreshDate = new Date(lastUpdated)
-        // data lagged by 3 days, so need to subtract from the updated date which reflects when the script last ran which is the night before the morning push to open data
-        let updatedDate = refreshDate.setDate(refreshDate.getDate() - 2)
-        updated.innerHTML = "Data through " + Intl.DateTimeFormat('en-US').format(updatedDate)  + ", lagged 3 days. <a href='https://data.sfgov.org/stories/s/nudz-9tg2' style='color:white;'>Learn more about how this data is updated and validated daily.</a>";
-        createLegend(geomLayer);
-        tippy('[data-tippy-content]', {
-          placement: 'right'
-        });
-      })
-      
-      /* Remove rotate from control
+      lastUpdated.then((throughDate) => setData(throughDate))
+
+      /* Remove rotate from control 
       *  Disable drag rotate
       *  Disable touch zoom rotate
       */
@@ -156,7 +135,47 @@
         })
     }
 
-    function createLegend(geomLayer, lastUpdated) {
+    function setData(throughDate) {
+      throughDate = new Date(throughDate)
+      let throughDateFormat = Intl.DateTimeFormat('en-US').format(throughDate);
+      let fromDate = new Date(throughDate.setDate(throughDate.getDate() - 29));
+      let fromDateISO = fromDate.toISOString().substring(0, 10);
+      let fromDateFormat = Intl.DateTimeFormat('en-US').format(fromDate);
+
+      var dataUrl = `https://data.sfgov.org/resource/d2ef-idww.geojson?$select=id,area_type,multipolygon,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=(area_type='Census Tract'+or+area_type='Analysis Neighborhood')+and+specimen_collection_date>='${fromDateISO}'&$group=id,area_type,multipolygon`
+
+      //get breaks
+      let censusValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Census Tract'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$order=rate`)
+        .then((values) => ss.ckmeans(values, 5))
+      let neighborhoodValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Analysis Neighborhood'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$order=rate`)
+        .then((values) => ss.ckmeans(values, 5))
+
+
+      Promise.all([censusValues, neighborhoodValues]).then(([censusVals, neighborhoodVals]) => {
+        map.addSource("geojson", {
+          type: "geojson",
+          data: dataUrl
+        })
+        // generate breaks
+        let neighborhoodBreaks = neighborhoodVals.reduce((acc, val) => acc.concat(Math.ceil(val[val.length - 1])), [])
+        let censusBreaks = censusVals.reduce((acc, val) => acc.concat(Math.ceil(val[val.length - 1])), [])
+        // set breaks
+        setDynamicBreaks(neighborhoodBreaks, 'neighborhoods-data');
+        setDynamicBreaks(censusBreaks, 'census-tracts-data');
+        addDynamicLayerStyles();
+        addInteraction();
+        let caseRangeText = `New cases confirmed between ${fromDateFormat} and ${throughDateFormat}`
+        new_cases_between.innerHTML = caseRangeText;
+        updated.innerHTML = caseRangeText;
+        createLegend(geomLayer);
+        tippy('[data-tippy-content]', {
+          placement: 'right'
+        });
+      })
+
+    }
+
+    function createLegend(geomLayer) {
       // create legend, use colors from mapbox style
       // BEWARE: array number of color ramp can change based on style ordering, must change if studio style changes
       legendbins.innerHTML = ''
@@ -165,7 +184,7 @@
       var layers = fillRamp.filter((layer, idx) => idx % 2 == 1);
       var colors = fillRamp.filter((layer, idx) => idx % 2 == 0)
       for (i = 0; i < layers.length; i++) {
-        var lowerbound = i == 0 ? "20 " : layers[i - 1];
+        var lowerbound = i == 0 ? "0 " : layers[i - 1];
         var layer = lowerbound + " to " + layers[i];
         var color = colors[i];
         var item = document.createElement('div');
@@ -186,12 +205,12 @@
       // update paint property
       let paintSteps = paintProperty[8];
       let j = 0
-      for (let i = 3; i < paintSteps.length; i+=2) {
+      for (let i = 3; i < paintSteps.length; i += 2) {
         paintSteps[i] = breaks[j];
         j++;
       }
       // set paint property
-      map.setPaintProperty(layer,'fill-color', paintProperty)
+      map.setPaintProperty(layer, 'fill-color', paintProperty)
     }
 
     function addDynamicLayerStyles() {
@@ -214,7 +233,7 @@
         map.setPaintProperty(outlineLayers[step], "line-width",
           ["case", ["==", ["feature-state", "selected"], true], 3, 1]);
         map.setPaintProperty(outlineLayers[step], "line-offset",
-          ["case", ["==", ["feature-state", "selected"], true], 1, 0]);
+          ["case", ["==", ["feature-state", "selected"], true], 2, 0]);
       }
     }
 
@@ -269,7 +288,7 @@
 
       // parse data from strings, catch nulls which will return NaN or undefineds where the attribute is missing
       var countText = (!isNaN(parseInt(data.count)) && typeof (data.count) !== "undefined") ? parseInt(data.count) : "fewer than 10";
-      var deathsText = !isNaN(parseInt(data.deaths)) ? parseInt(data.deaths) : "fewer than 10";
+      //var deathsText = !isNaN(parseInt(data.deaths)) ? parseInt(data.deaths) : "fewer than 10";
       var rate = !isNaN(parseFloat(data.rate)) && typeof (data.rate) != "undefined" ? parseFloat(data.rate) : null;
       // all acs_populations should be populated, not catching NaN or undefined
       var acs_population = parseInt(data.acs_population);
@@ -277,13 +296,13 @@
         lines += `<p>Data dropped for ${geomName} because the estimated population is less than 1,000</p>`
       } else {
         if (typeof (countText) === "string" || countText < 20 || rate === null) {
-          lines += `<p>Rates are not calculated for ${geomName} because the case counts are fewer than 20.</p>`;
+          lines += `<p>Rates are not calculated for ${geomName} because the new cases are fewer than 20.</p>`;
         } else {
-          lines += `<p><strong>Estimated case rate:</strong> ${rate.toFixed(1)} cases per 10,000 residents.</p>`;
+          lines += `<p><strong>Estimated new case rate:</strong> ${rate.toFixed(1)} cases per 10,000 residents over a 30 day period.</p>`;
         }
-        lines += `<p><strong>Confirmed cases:</strong> ${formatNumber(countText)} cases among an estimated resident population of ${formatNumber(acs_population)}.`;
+        lines += `<p><strong>New confirmed cases:</strong> ${formatNumber(countText)} cases confirmed over a 30 day period among an estimated resident population of ${formatNumber(acs_population)}.`;
         // enter logic to cast undefined to 0 deaths
-        lines += `<p><strong>Confirmed deaths:</strong> ${deathsText} individuals have died.`;
+        //lines += `<p><strong>Confirmed deaths:</strong> ${deathsText} individuals have died.`;
       }
       /*lines += `<p>[OPTIONAL AREA SPECIFIC INFORMATION HERE, for example: This area contains a shelter with a recent outbreak. The City is working to transfer all affected individuals into the appropriate medical care facility based on their needs. More information on the City’s response here: [LINK].]</p>`;*/
       lines += `<h2>San Francisco offering help to residents</h2>`;
@@ -362,6 +381,8 @@
 
     document.getElementById('fit').addEventListener('click', function () {
       map.fitBounds(sfbounds);
+      // resets sidebar by selecting the currently selected geometry
+      setSelectedGeometry(selectedGeom)
     });
 
   </script>
