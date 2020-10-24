@@ -75,10 +75,6 @@
     var initialTitle = document.getElementById('dynamic_title').innerHTML;
     var initialText = document.getElementById('dynamic_content').innerHTML;
 
-    // user and password
-    let user = '36hj99nio6hzkixhwcq5x3sn6'
-    let pass = '6cbk7p7e0zd5wzbqvkm3u619r5drsqi4qclqb7rm20voc0l6es'
-
     mapboxgl.accessToken = 'pk.eyJ1IjoiZGF0YXNmIiwiYSI6ImNrOXVzcjQ5czA1Nmkza3BrZTJ4eGg5bmgifQ.wOYqgXQmhOGDhsH3jNyP9A';
     var sfbounds = [-122.51517176651764, 37.70717556431859, -122.35761922678324, 37.84150802989059];
 
@@ -145,9 +141,9 @@
       var dataUrl = `https://data.sfgov.org/resource/d2ef-idww.geojson?$select=id,area_type,multipolygon,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=(area_type='Census Tract'+or+area_type='Analysis Neighborhood')+and+specimen_collection_date>='${fromDateISO}'&$group=id,area_type,multipolygon`
 
       //get breaks
-      let censusValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Census Tract'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$order=rate`)
+      let censusValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Census Tract'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$having=count>19&$order=rate`)
         .then((values) => ss.ckmeans(values, 5))
-      let neighborhoodValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Analysis Neighborhood'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$order=rate`)
+      let neighborhoodValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Analysis Neighborhood'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$having=count>19&$order=rate`)
         .then((values) => ss.ckmeans(values, 5))
 
 
