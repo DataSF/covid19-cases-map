@@ -141,7 +141,7 @@
       var dataUrl = `https://data.sfgov.org/resource/d2ef-idww.geojson?$select=id,area_type,multipolygon,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=(area_type='Census Tract'+or+area_type='Analysis Neighborhood')+and+specimen_collection_date>='${fromDateISO}'&$group=id,area_type,multipolygon`
 
       //get breaks
-      let censusValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Census Tract'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$having=count>19$order=rate`)
+      let censusValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Census Tract'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$having=count>19&$order=rate`)
         .then((values) => ss.ckmeans(values, 5))
       let neighborhoodValues = fetchDataRange(`https://data.sfgov.org/resource/d2ef-idww.json?$select=id,sum(new_confirmed_cases)+as+count,max(acs_population)+as+acs_population,((count/acs_population)*10000)+as+rate&$where=area_type='Analysis Neighborhood'+and+specimen_collection_date>='${fromDateISO}'&$group=id&$having=count>19&$order=rate`)
         .then((values) => ss.ckmeans(values, 5))
